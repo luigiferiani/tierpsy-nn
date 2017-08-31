@@ -1,0 +1,1 @@
+SAVE_DIR = '/Volumes/behavgenom_archive$/Avelino/neural_networks/skeletons_cnn_tests/'

@@ -1,0 +1,35 @@
+unet_20170707_172820  
+- I normalize images by substracting the median, but i didn't divide by 255.
+- The image is divided in 4 crops for each corner, and padded with the mirror image as in Ronneberger et. al 2015 (input 444, output 260)
+- I can only put 8 crops (two images) in the GPU due to memory liminations.
+- Pretty decent results but there is a lot of noise in the borders.
+- I only train for 5000 epocs.
+
+unet_norm_20170708_214716
+- Same as unet_20170707_172820 but I normalize by divide it by 255 and run for 10000 epocs. 
+** Funny enough this system converges latter than unet_norm_20170708_214716 
+
+unet_norm_bn_20170709_123247
+- add batch normalization after each convolutional and deconvolutional layer.
+- add a central crop (pad_size:-pad_size). This has the side effect that I can only put one image in the GPU per train epoch (5 crops).
+** The loss function converges much faster than in unet_norm_20170708_214716 but the results are worse. In several images the center of the food was not found and the borders are patchy. It is hard to know if it is was due to the center layer, the fact that is only seeing one image per training epoch or simpy the batch normalization somehow.
+
+
+### 
+unet_norm_w_20170710_163439
+- Custom loss function using per pixel weights as in Ronneberger et. al 2015 . I did a trick to pass this vector to keras as the last dimension in Y on the data iterator. I put an extra weight on the food border.
+- I use batch normalization without bias and a tile of 4. 
+* It converges much after and has a lower loss, but it consistently losses big parts in the center of the food.
+
+unet_norm_w_not_bn_20170710_171458
+- Similar to unet_norm_w_20170710_163439 but I did not apply the batch normalization and I use a bias.
+* The losses and the convergence are larger than unet_norm_w_20170710_163439 but the patch of food looks better. It consistently wrongly  predict food in the edges of the image, however the food border look nice.
+
+unet_norm_w_bn_bias_20170711_091038
+- Similar to unet_norm_w_20170710_163439 but I am including the bias term.
+* It converges much after and has a lower loss, and does look like unet_norm_w_not_bn_20170710_171458 .
+
+
+***
+- use only one resized image (260) instead that the crop.
+- two stage selection, first pick a date and then a random sample for that date.

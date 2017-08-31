@@ -1,0 +1,1 @@
+pyuic5 image_labeler.ui -o image_labeler_ui.py

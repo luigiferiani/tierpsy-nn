@@ -1,0 +1,41 @@
+ssh -L 16006:127.0.0.1:7007 ajaver@login.cx1.hpc.imperial.ac.uk
+
+module load anaconda3
+module load cuda
+source activate tierpsy
+tensorboard --logdir=$WORK/egg_laying/logs/ --port=7007
+tensorboard --logdir=$WORK/food/results/logs/ --port=7007
+tensorboard --logdir=$WORK/egg_counter/results/logs/ --port=7007
+
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_bn_20170709_123247/unet_norm_bn-08249-0.0071.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_20170708_214716/unet_norm-09599-0.0098.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
+
+scp "/Users/ajaver/OneDrive - Imperial College London/egg_laying/train_data_eggs.hdf5" ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/egg_laying
+
+rsync -vr --exclude '*.h5' --exclude '*.npy' /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests ajaver@login.cx1.hpc.imperial.ac.uk:/home/ajaver
+
+rsync -vr "/Users/ajaver/OneDrive - Imperial College London/food/train_set" ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/train_set
+
+
+rsync -vr "/Users/ajaver/OneDrive - Imperial College London/egg_counter/example" ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/egg_counter/train_set
+
+
+/work/ajaver/food/results/logs/unet_norm_w_bn_bias_20170711_091038/unet_norm_w_bn_bias-02249-0.7477.h5
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_w_no_bn_cnt_20170715_094511/unet_norm_w_no_bn_cnt-01999-1.3020.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_w_no_bn_20170714_132343/unet_norm_w_no_bn-04249-0.3976.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_RMSprop-5_cnt_20170730_201024/unet_RMSprop-5_cnt-02499-1.2666.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
+
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/egg_laying/logs/egg_mobilenet_W5-2-2_R128_B32_20170725_231800/egg_mobilenet_W5-2-2_R128_B32-00349-0.3753.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/egg_laying
+
+
+python $HOME/nn_tests/egg_laying/train_eggs.py --window_size 7 --y_offset_left 3 --y_offset_right 3 --is_tiny False --model_name "densenet121"
+
+
+scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/egg_counter/results/logs/unet_eggs_Adam5_20170728_170623/unet_eggs_Adam5-01899-0.0001.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/egg_laying/
+
