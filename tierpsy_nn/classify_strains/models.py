@@ -85,6 +85,7 @@ def simple_model(input_shape, output_shape):
 #%%
 import os
 import time
+import sys
 
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.optimizers import Adam
@@ -92,9 +93,13 @@ from keras.optimizers import Adam
 from skeletons_flow import SkeletonsFlow
 
 if __name__ == '__main__':
-    log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
-    main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
     
+    if sys.platform == 'linux':
+        log_dir_root = '/work/ajaver/classify_strains/results'
+        main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
+    else:        
+        log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
+        main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
     
     # for reproducibility
     rand_seed = 1337
@@ -102,7 +107,6 @@ if __name__ == '__main__':
     
     epochs = 500
     saving_period = 50
-    
     
     skel_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = 50, 
@@ -114,10 +118,10 @@ if __name__ == '__main__':
     
     model = simple_model(input_shape, output_shape)
 
-
-    log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (model.name, time.strftime('%Y%m%d_%H%M%S')))
+    base_name = model.name
+    log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
     pad=int(np.ceil(np.log10(epochs+1)))
-    checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{loss:.4f}.h5' % (model.name, pad))
+    checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{loss:.4f}.h5' % (base_name, pad))
     
     
     tb = TensorBoard(log_dir = log_dir)
