@@ -183,44 +183,27 @@ class SkeletonsFlow():
         D = [self.next_single() for n in range(self.n_batch)]
         X, Y = map(np.array, zip(*D))
         return X,Y
-        
+    
+    def __len__(self):
+        return self.skeletons_indexes.shape[0]
+    
 if __name__ == '__main__':
     skel_generator = SkeletonsFlow(n_batch = 50, set_type='tiny')
 
     X,Y = next(skel_generator)
     
-#    from keras.callbacks import TensorBoard
-#    from keras.callbacks import ModelCheckpoint
-#    from keras.optimizers import Adam
-#    import sys
-#    sys.path.append('/Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/egg_laying/densenet')
-#    from densenet import DenseNet
-#
-#
-#    log_dir = '/Users/ajaver/OneDrive - Imperial College London/test_classify_skeletons'
-#    
-#    model = DenseNet(input_shape = X.shape[1:], output_shape=Y.shape[1:])
-#    
-#    model.compile(optimizer=Adam(lr=1e-4), 
-#                  loss='categorical_crossentropy',
-#                  metrics=['categorical_accuracy'])
-#    
-#    tb = TensorBoard(log_dir=log_dir)
-#    model.fit_generator(skel_generator,
-#                        steps_per_epoch = len(skel_generator.strain_ids), 
-#                        epochs = 100,
-#                        verbose = 1,
-#                        callbacks = [tb]
-#                        )
-    #%%
     import matplotlib.pylab as plt
     
     for x in X:
+        
         plt.figure()
         plt.subplot(2,1,1)
-        plt.imshow(x[:, :, 1].T)
+        plt.imshow(x[:, :, 1].T, aspect='auto')
         plt.subplot(2,1,2)
-        plt.imshow(x[:, :, 0].T)
+        plt.imshow(x[:, :, 0].T, aspect='auto')
+        #%%
+
+
 
 
 
