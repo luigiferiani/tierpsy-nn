@@ -104,7 +104,7 @@ class SkeletonsFlow():
         
         
         #number of classes for the one-hot encoding
-        self.n_clases = df2['strain_id'].max()
+        self.n_clases = df2['strain_id'].max() + 1
         
         skeletons_indexes = pd.merge(df1, df2, on='strain')
         good = skeletons_indexes.apply(lambda x : x['fin'] - x['ini'] >= self.sample_size_frames, axis=1)

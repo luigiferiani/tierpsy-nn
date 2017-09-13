@@ -83,16 +83,15 @@ def simple_model(input_shape, output_shape):
     return model
 
 #%%
-import os
-import time
-import sys
-
-from keras.callbacks import TensorBoard, ModelCheckpoint
-from keras.optimizers import Adam
-
-from skeletons_flow import SkeletonsFlow
-
 if __name__ == '__main__':
+    import os
+    import time
+    import sys
+    
+    from keras.callbacks import TensorBoard, ModelCheckpoint
+    from keras.optimizers import Adam
+    
+    from skeletons_flow import SkeletonsFlow
     
     if sys.platform == 'linux':
         log_dir_root = '/work/ajaver/classify_strains/results'
