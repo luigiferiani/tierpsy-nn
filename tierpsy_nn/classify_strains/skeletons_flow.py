@@ -82,14 +82,12 @@ class SkeletonsFlow():
                 n_batch,
                 main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5',
                 set_type = None,
-                is_tiny = False,
+                min_num_samples = 10,
                 expected_fps = 30,
                 sample_size_frames_s = 90,
                 sample_frequency_s = 1/10,
                 body_range = (8, 41)
                 ):
-        
-        
         
         self.n_batch = n_batch
         self.sample_size_frames = sample_size_frames_s*expected_fps
@@ -100,8 +98,6 @@ class SkeletonsFlow():
         with pd.HDFStore(self.main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
             df2 = fid['/strains_codes']
-        
-        
         
         #number of classes for the one-hot encoding
         self.n_clases = df2['strain_id'].max() + 1
@@ -116,16 +112,14 @@ class SkeletonsFlow():
                 #use previously calculated indexes to divide data in training, validation and test sets
                 valid_indices = fid.get_node('/index_groups/' + set_type)[:]
                 skeletons_indexes = skeletons_indexes.loc[valid_indices]
-        elif set_type:
-            #filter sets with at least 10 videos per strain
-            skeletons_indexes = skeletons_indexes.groupby('strain_id').filter(lambda x: len(x['experiment_id'].unique()) >= 10)
+        
+
+        skeletons_indexes = skeletons_indexes.groupby('strain_id').filter(lambda x: len(x['experiment_id'].unique()) >= min_num_samples)
         
         self.skeletons_indexes = skeletons_indexes
         self.skeletons_groups = skeletons_indexes.groupby('strain_id')
         self.strain_ids = self.skeletons_groups.indices.keys()
         
-
-
     def _random_choice(self):
         strain_id, = random.sample(self.strain_ids, 1)
         gg = self.skeletons_groups.get_group(strain_id)
@@ -148,8 +142,6 @@ class SkeletonsFlow():
         
         body_coords = np.mean(skeletons[:, self.body_range[0]:self.body_range[1]+1, :], axis=1)
         skeletons -= body_coords[:, None, :]
-        
-        
         
         return strain_id, skeletons
     

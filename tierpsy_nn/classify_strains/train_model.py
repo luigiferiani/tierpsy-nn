@@ -25,8 +25,8 @@ else:
 
 def main(
     epochs = 5000,
-    saving_period = 20,
-    n_batch = 50,
+    saving_period = 3,
+    n_batch = 128,
     model_type = 'simple'
     ):
     
