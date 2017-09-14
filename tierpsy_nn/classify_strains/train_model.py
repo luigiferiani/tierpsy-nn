@@ -44,13 +44,16 @@ def main(
     
     train_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
-                                   set_type='train'
+                                   set_type='train',
+                                   valid_strains = valid_strains
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
-                                   set_type='val'
+                                   set_type='val',
+                                   valid_strains = valid_strains
                                    )
-    
+    print(train_generator.skeletons_indexes['strain'].unique())
+
     X,Y = next(train_generator)
     input_shape = X.shape[1:]
     output_shape = Y.shape[1:]
