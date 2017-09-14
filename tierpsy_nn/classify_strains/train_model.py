@@ -26,10 +26,17 @@ else:
 def main(
     epochs = 5000,
     saving_period = 3,
-    n_batch = 128,
-    model_type = 'simple'
+    n_batch = 64,
+    model_type = 'simple',
+    is_reduced = True
     ):
     
+    if is_reduced:
+      valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
+         'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
+    else:
+      valid_strains = None
+
     # for reproducibility
     rand_seed = 1337
     np.random.seed(rand_seed)  
@@ -41,7 +48,7 @@ def main(
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
-                                   set_type='test'
+                                   set_type='val'
                                    )
     
     X,Y = next(train_generator)
@@ -55,6 +62,9 @@ def main(
         ValueError('Not valid model_type')
 
     base_name = model.name
+    if is_reduced:
+      base_name = 'R_' + base_name 
+
     log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
     pad=int(np.ceil(np.log10(epochs+1)))
     checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{loss:.4f}.h5' % (base_name, pad))

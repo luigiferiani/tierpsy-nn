@@ -83,6 +83,7 @@ class SkeletonsFlow():
                 main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5',
                 set_type = None,
                 min_num_samples = 10,
+                valid_strains = None,
                 expected_fps = 30,
                 sample_size_frames_s = 90,
                 sample_frequency_s = 1/10,
@@ -115,7 +116,10 @@ class SkeletonsFlow():
         
 
         skeletons_indexes = skeletons_indexes.groupby('strain_id').filter(lambda x: len(x['experiment_id'].unique()) >= min_num_samples)
-        
+        if valid_strains is not None:
+            skeletons_indexes = skeletons_indexes[skeletons_indexes.isin(valid_strains)]
+
+
         self.skeletons_indexes = skeletons_indexes
         self.skeletons_groups = skeletons_indexes.groupby('strain_id')
         self.strain_ids = self.skeletons_groups.indices.keys()
