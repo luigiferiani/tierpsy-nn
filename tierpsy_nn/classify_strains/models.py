@@ -82,8 +82,74 @@ def simple_model(input_shape, output_shape):
     
     return model
 
+def larger_model(input_shape, output_shape):
+    img_input =  Input(shape = input_shape)
+    
+    x = Conv2D(32, (3, 7), padding='same', name='conv0')(img_input)
+    x = Activation('relu', name='conv0_act')(x)
+    x = MaxPooling2D((2, 2), name='conv0_pool')(x)
+    
+    x = Conv2D(64, (3, 3), padding='same', name='conv1a')(x)
+    x = BatchNormalization(name='conv1a_bn')(x)
+    x = Activation('relu', name='conv1a_act')(x)
+    
+    x = Conv2D(64, (3, 3), padding='same', name='conv1b')(x)
+    x = BatchNormalization(name='conv1b_bn')(x)
+    x = Activation('relu', name='conv1b_act')(x)
+    
+    x = MaxPooling2D((2, 2), name='conv1_pool')(x)
+    
+    x = Conv2D(128, (3, 3), padding='same', name='conv2a')(x)
+    x = BatchNormalization(name='conv2a_bn')(x)
+    x = Activation('relu', name='conv2a_act')(x)
+    
+    x = Conv2D(128, (3, 3), padding='same', name='conv2b')(x)
+    x = BatchNormalization(name='conv2b_bn')(x)
+    x = Activation('relu', name='conv2b_act')(x)
+    
+    x = MaxPooling2D((2, 2), name='conv2_pool')(x)
+    
+    x = Conv2D(256, (3, 3), padding='same', name='conv3a')(x)
+    x = BatchNormalization(name='conv3a_bn')(x)
+    x = Activation('relu', name='conv3a_act')(x)
+    
+    x = Conv2D(256, (3, 3), padding='same', name='conv3b')(x)
+    x = BatchNormalization(name='conv3b_bn')(x)
+    x = Activation('relu', name='conv3b_act')(x)
+    
+    x = MaxPooling2D((2, 2), name='conv3_pool')(x)
+    
+    x = Conv2D(512, (3, 3), padding='same', name='conv4a')(x)
+    x = BatchNormalization(name='conv4a_bn')(x)
+    x = Activation('relu', name='conv4a_act')(x)
+    
+    x = Conv2D(512, (3, 3), padding='same', name='conv4b')(x)
+    x = BatchNormalization(name='conv4b_bn')(x)
+    x = Activation('relu', name='conv4b_act')(x)
+    
+    x = MaxPooling2D((2, 2), name='conv4_pool')(x)
+    
+    x = Conv2D(1024, (3, 3), padding='same', name='conv5a')(x)
+    x = BatchNormalization(name='conv5a_bn')(x)
+    x = Activation('relu', name='conv5a_act')(x)
+    
+    x = Conv2D(1024, (3, 3), padding='same', name='conv5b')(x)
+    x = BatchNormalization(name='conv5b_bn')(x)
+    x = Activation('relu', name='conv5b_act')(x)
+    
+    x = GlobalMaxPooling2D(name='avg_pool')(x)
+    x = Dense(1024, name='dense0', activation='elu')(x)
+    x = Dropout(0.4)(x)
+    
+    output = Dense(np.prod(output_shape), name='output', activation='softmax')(x)
+    output = Reshape(output_shape)(output)
+    
+    model = Model(img_input, output, name = 'larger_model')
+    
+    return model
+
 #%%
-if __name__ == '__main__':
+def main():
     import os
     import time
     import sys
@@ -141,3 +207,9 @@ if __name__ == '__main__':
                         verbose = 1,
                         callbacks=[tb, mcp]
                         )
+
+if __name__ == '__main__':
+    input_shape = (64, 900, 2)
+    output_shape = (356,)
+
+    mod = larger_model(input_shape, output_shape)
