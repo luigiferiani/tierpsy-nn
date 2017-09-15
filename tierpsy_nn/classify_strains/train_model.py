@@ -61,6 +61,9 @@ def main(
     if model_type == 'simple':
         from models import simple_model
         model = simple_model(input_shape, output_shape)
+    elif model_type == 'larger':
+        from models import larger_model
+        model = larger_model(input_shape, output_shape)
     else:
         ValueError('Not valid model_type')
 
