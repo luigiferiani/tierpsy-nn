@@ -66,7 +66,8 @@ def main(
         model = larger_model(input_shape, output_shape)
     else:
         ValueError('Not valid model_type')
-
+    print(model.summary())    
+    
     base_name = model.name
     if is_reduced:
       base_name = 'R_' + base_name 
