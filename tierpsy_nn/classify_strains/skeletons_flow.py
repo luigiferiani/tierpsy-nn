@@ -183,7 +183,17 @@ class SkeletonsFlow():
         return self.skeletons_indexes.shape[0]
     
 if __name__ == '__main__':
-    skel_generator = SkeletonsFlow(n_batch = 50, set_type='tiny')
+    if sys.platform == 'linux':
+        log_dir_root = '/work/ajaver/classify_strains/results'
+        main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
+    else:        
+        log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
+        main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
+
+
+    skel_generator = SkeletonsFlow(n_batch = 50, 
+                                    main_file = main_file,
+                                    set_type='tiny')
 
     for ii, (X,Y) in enumerate(skel_generator):
         print(ii)
