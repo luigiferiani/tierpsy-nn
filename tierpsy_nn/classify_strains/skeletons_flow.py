@@ -82,7 +82,7 @@ class SkeletonsFlow():
                 n_batch,
                 main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5',
                 set_type = None,
-                min_num_samples = 10,
+                min_num_samples = 1,
                 valid_strains = None,
                 expected_fps = 30,
                 sample_size_frames_s = 90,
