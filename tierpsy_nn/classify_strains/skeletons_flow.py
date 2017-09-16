@@ -191,13 +191,29 @@ if __name__ == '__main__':
         log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
         main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
 
+    valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
+         'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
 
-    skel_generator = SkeletonsFlow(n_batch = 50, 
-                                    main_file = main_file,
-                                    set_type='tiny')
+    n_batch = 64
+
+    train_generator = SkeletonsFlow(main_file = main_file, 
+                                   n_batch = n_batch, 
+                                   set_type='train',
+                                   valid_strains = valid_strains
+                                   )
+    val_generator = SkeletonsFlow(main_file = main_file, 
+                                   n_batch = n_batch, 
+                                   set_type='val',
+                                   valid_strains = valid_strains
+                                   )
+
     ii = 0
     while True:
-        X,Y = next(skel_generator)
+        print('T')
+        X,Y = next(train_generator)
+
+        print('V')
+        X,Y = next(val_generator)
         ii += 1
         print(ii)
     # X,Y = next(skel_generator)
