@@ -195,8 +195,10 @@ if __name__ == '__main__':
     skel_generator = SkeletonsFlow(n_batch = 50, 
                                     main_file = main_file,
                                     set_type='tiny')
-
-    for ii, (X,Y) in enumerate(skel_generator):
+    ii = 0
+    while True:
+        X,Y = next(skel_generator)
+        ii += 1
         print(ii)
     # X,Y = next(skel_generator)
     
