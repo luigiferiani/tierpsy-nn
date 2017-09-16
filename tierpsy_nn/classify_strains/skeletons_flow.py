@@ -125,31 +125,30 @@ class SkeletonsFlow():
         self.strain_ids = self.skeletons_groups.indices.keys()
         
     def _random_choice(self):
-        while True:
-            strain_id, = random.sample(self.strain_ids, 1)
-            gg = self.skeletons_groups.get_group(strain_id)
-            ind, = random.sample(list(gg.index), 1)
-            dat = gg.loc[ind]
-            
-            r_f = dat['fin'] - self.sample_size_frames
-            ini_r = random.randint(dat['ini'], r_f)
-            
-            row_indices = np.arange(ini_r, ini_r + self.sample_size_frames, self.sample_frequency)
-            row_indices = np.round(row_indices).astype(np.int32)
-            
-            #read data
-            with tables.File(self.main_file, 'r') as fid:
-                skeletons = fid.get_node('/skeletons_data')[row_indices, :, :]
-            
-            if np.any(np.isnan(skeletons)):
-                continue #this is a bug but i want to solve it fast
-                import pdb
-                pdb.set_trace()
-            
-            body_coords = np.mean(skeletons[:, self.body_range[0]:self.body_range[1]+1, :], axis=1)
-            skeletons -= body_coords[:, None, :]
-            
-            return strain_id, skeletons
+        strain_id, = random.sample(self.strain_ids, 1)
+        gg = self.skeletons_groups.get_group(strain_id)
+        ind, = random.sample(list(gg.index), 1)
+        dat = gg.loc[ind]
+        
+        r_f = dat['fin'] - self.sample_size_frames
+        ini_r = random.randint(dat['ini'], r_f)
+        
+        row_indices = np.arange(ini_r, ini_r + self.sample_size_frames, self.sample_frequency)
+        row_indices = np.round(row_indices).astype(np.int32)
+        
+        #read data
+        with tables.File(self.main_file, 'r') as fid:
+            skeletons = fid.get_node('/skeletons_data')[row_indices, :, :]
+        
+        if np.any(np.isnan(skeletons)):
+             #this is a bug but i want to solve it fast
+            import pdb
+            pdb.set_trace()
+        
+        body_coords = np.mean(skeletons[:, self.body_range[0]:self.body_range[1]+1, :], axis=1)
+        skeletons -= body_coords[:, None, :]
+        
+        return strain_id, skeletons
     
     def _random_transform(self, skeletons):
         #random rotation
