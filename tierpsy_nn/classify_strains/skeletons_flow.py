@@ -141,7 +141,8 @@ class SkeletonsFlow():
             skeletons = fid.get_node('/skeletons_data')[row_indices, :, :]
         
         if np.any(np.isnan(skeletons)):
-             #this is a bug but i want to solve it fast
+            print(strain_id, ind, row_indices)
+            #this is a bug but i want to solve it fast
             import pdb
             pdb.set_trace()
         
@@ -171,9 +172,6 @@ class SkeletonsFlow():
          X = self._random_transform(skeletons)
          Y = np.zeros(self.n_clases, np.int32)
          Y[strain_id] = 1
-         
-         
-         
          return X,Y
      
     def __next__(self):
@@ -187,18 +185,20 @@ class SkeletonsFlow():
 if __name__ == '__main__':
     skel_generator = SkeletonsFlow(n_batch = 50, set_type='tiny')
 
-    X,Y = next(skel_generator)
+    for ii, (X,Y) in enumerate(skel_generator):
+        print(ii)
+    # X,Y = next(skel_generator)
     
-    import matplotlib.pylab as plt
+    # import matplotlib.pylab as plt
     
-    for x in X:
+    # for x in X:
         
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.imshow(x[:, :, 1].T, aspect='auto')
-        plt.subplot(2,1,2)
-        plt.imshow(x[:, :, 0].T, aspect='auto')
-        #%%
+    #     plt.figure()
+    #     plt.subplot(2,1,1)
+    #     plt.imshow(x[:, :, 1].T, aspect='auto')
+    #     plt.subplot(2,1,2)
+    #     plt.imshow(x[:, :, 0].T, aspect='auto')
+    #     #%%
 
 
 
