@@ -183,6 +183,7 @@ class SkeletonsFlow():
         return self.skeletons_indexes.shape[0]
     
 if __name__ == '__main__':
+    import sys
     if sys.platform == 'linux':
         log_dir_root = '/work/ajaver/classify_strains/results'
         main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
