@@ -9,6 +9,7 @@ import pandas as pd
 import tables
 import numpy as np
 import random
+import time
 
 def _h_divide_in_sets(strain_groups,
                    test_frac = 0.1,
@@ -136,9 +137,15 @@ class SkeletonsFlow():
         row_indices = np.arange(ini_r, ini_r + self.sample_size_frames, self.sample_frequency)
         row_indices = np.round(row_indices).astype(np.int32)
         
-        #read data
-        with tables.File(self.main_file, 'r') as fid:
-            skeletons = fid.get_node('/skeletons_data')[row_indices, :, :]
+        while True
+            try:
+                #read data
+                with tables.File(self.main_file, 'r') as fid:
+                    skeletons = fid.get_node('/skeletons_data')[row_indices, :, :]
+                    break
+            except KeyError: 
+                print('There was an error reading the file, I will try again...')
+                time.sleep(1)
         
         if np.any(np.isnan(skeletons)):
             print(strain_id, ind, row_indices)
