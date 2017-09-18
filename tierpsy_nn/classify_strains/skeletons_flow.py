@@ -137,7 +137,7 @@ class SkeletonsFlow():
         row_indices = np.arange(ini_r, ini_r + self.sample_size_frames, self.sample_frequency)
         row_indices = np.round(row_indices).astype(np.int32)
         
-        while True
+        while True:
             try:
                 #read data
                 with tables.File(self.main_file, 'r') as fid:
@@ -223,6 +223,10 @@ if __name__ == '__main__':
         X,Y = next(val_generator)
         ii += 1
         print(ii)
+        if ii >= 5:
+            break
+        
+        
     # X,Y = next(skel_generator)
     
     # import matplotlib.pylab as plt
