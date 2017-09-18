@@ -90,6 +90,7 @@ def simple_model(input_shape, output_shape):
 def larger_model(input_shape, output_shape):
     img_input =  Input(shape = input_shape)
     
+    #there is a bug here (the kernel must be 3x7) but i keep it just to document it
     x = Conv2D(32, (3, 7), padding='same', name='conv0')(img_input)
     x = Activation('relu', name='conv0_act')(x)
     x = MaxPooling2D((2, 2), name='conv0_pool')(x)
@@ -254,7 +255,7 @@ def resnet50_model(input_shape, output_shape):
         bn_axis = 1
 
     img_input =  Input(shape = input_shape)
-    x = Conv2D(64, (3, 7), strides=(2, 2), name='conv1')(img_input)
+    x = Conv2D(64, (7, 3), strides=(2, 2), name='conv1')(img_input)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2))(x)
@@ -279,7 +280,7 @@ def resnet50_model(input_shape, output_shape):
     x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
     x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
-    x = AveragePooling2D((2, 7), name='avg_pool')(x)
+    x = AveragePooling2D((7, 2), name='avg_pool')(x)
     #x = Flatten()(x)
     x = GlobalMaxPooling2D()(x)
     output = Dense(np.prod(output_shape), name='output', activation='softmax')(x)
@@ -291,6 +292,7 @@ def resnet50_model(input_shape, output_shape):
 #%%
 ##%%
 def main():
+    #%%
     import os
     import time
     import sys
@@ -321,7 +323,7 @@ def main():
     X,Y = next(skel_generator)
     input_shape = X.shape[1:]
     output_shape = Y.shape[1:]
-    
+    #%%
     model = resnet50_model(input_shape, output_shape)
 
     base_name = model.name
@@ -350,9 +352,9 @@ def main():
                         )
 #
 if __name__ == '__main__':
-    input_shape = (64, 900, 2)
+    input_shape = (900, 49, 2)
     output_shape = (356,)
     
-    #main()
-    mod = resnet50_model(input_shape, output_shape)
+    main()
+    #mod = resnet50_model(input_shape, output_shape)
     #mod = larger_model(input_shape, output_shape)
