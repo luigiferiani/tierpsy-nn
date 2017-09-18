@@ -279,7 +279,7 @@ def resnet50_model(input_shape, output_shape):
     x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
     x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
-    #x = AveragePooling2D((2, 7), name='avg_pool')(x)
+    x = AveragePooling2D((2, 7), name='avg_pool')(x)
     #x = Flatten()(x)
     x = GlobalMaxPooling2D()(x)
     output = Dense(np.prod(output_shape), name='output', activation='softmax')(x)
@@ -353,6 +353,6 @@ if __name__ == '__main__':
     input_shape = (64, 900, 2)
     output_shape = (356,)
     
-    main()
-    #mod = restnet50_model(input_shape, output_shape)
+    #main()
+    mod = resnet50_model(input_shape, output_shape)
     #mod = larger_model(input_shape, output_shape)

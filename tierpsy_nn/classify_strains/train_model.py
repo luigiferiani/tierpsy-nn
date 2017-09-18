@@ -26,7 +26,6 @@ else:
 def main(
     epochs = 5000,
     saving_period = 3,
-    n_batch = 64,
     model_type = 'simple',
     is_reduced = True
     ):
@@ -41,6 +40,24 @@ def main(
     rand_seed = 1337
     np.random.seed(rand_seed)  
     
+    if model_type == 'simple':
+        from models import simple_model
+        model_fun = simple_model
+        n_batch = 64
+        
+    elif model_type == 'larger':
+        from models import larger_model
+        model_fun = larger_model
+        n_batch = 64
+        
+    elif model_type == 'resnet50':
+        from models import resnet50_model
+        model_fun = resnet50_model
+        n_batch = 32
+        
+    else:
+        ValueError('Not valid model_type')
+    
     
     train_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
@@ -52,23 +69,16 @@ def main(
                                    set_type='val',
                                    valid_strains = valid_strains
                                    )
-    print(train_generator.skeletons_indexes['strain'].unique())
-
+    
     X,Y = next(train_generator)
     input_shape = X.shape[1:]
     output_shape = Y.shape[1:]
     
-    if model_type == 'simple':
-        from models import simple_model
-        model = simple_model(input_shape, output_shape)
-    elif model_type == 'larger':
-        from models import larger_model
-        model = larger_model(input_shape, output_shape)
-    elif model_type == 'resnet50':
-        from models import resnet50_model
-        model = resnet50_model(input_shape, output_shape)
-    else:
-        ValueError('Not valid model_type')
+    
+    model = model_fun(input_shape, output_shape)
+    
+    print(train_generator.skeletons_indexes['strain'].unique())
+    
     print(model.summary())    
     
     base_name = model.name
