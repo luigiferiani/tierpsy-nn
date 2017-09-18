@@ -64,6 +64,9 @@ def main(
     elif model_type == 'larger':
         from models import larger_model
         model = larger_model(input_shape, output_shape)
+    elif model_type == 'resnet50':
+        from models import resnet50_model
+        model = resnet50_model(input_shape, output_shape)
     else:
         ValueError('Not valid model_type')
     print(model.summary())    

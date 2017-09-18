@@ -149,7 +149,7 @@ class SkeletonsFlow():
         
         if np.any(np.isnan(skeletons)):
             print(strain_id, ind, row_indices)
-            #this is a bug but i want to solve it fast
+            #if there are nan we have a bug... i am not sure how to solve it...
             import pdb
             pdb.set_trace()
         
@@ -211,6 +211,11 @@ if __name__ == '__main__':
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
                                    set_type='val',
+                                   valid_strains = valid_strains
+                                   )
+    test_generator = SkeletonsFlow(main_file = main_file, 
+                                   n_batch = n_batch, 
+                                   set_type='test',
                                    valid_strains = valid_strains
                                    )
 

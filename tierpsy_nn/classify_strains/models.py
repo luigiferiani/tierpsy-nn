@@ -17,7 +17,12 @@ from keras.layers import GlobalMaxPooling2D
 from keras.layers import Dense
 from keras.layers import Reshape
 from keras.layers import Dropout
+from keras.layers import Flatten
+from keras.layers import AveragePooling2D
+from keras.layers import GlobalAveragePooling2D
+from keras import layers
 
+from keras import backend as K
 #%%
 def simple_model(input_shape, output_shape):
     img_input =  Input(shape = input_shape)
@@ -148,7 +153,143 @@ def larger_model(input_shape, output_shape):
     
     return model
 
+#%% Modified from https://github.com/fchollet/deep-learning-models/blob/master/resnet50.py
+def _identity_block(input_tensor, kernel_size, filters, stage, block, dropout_rate=0):
+    """The identity block is the block that has no conv layer at shortcut.
+    # Arguments
+        input_tensor: input tensor
+        kernel_size: defualt 3, the kernel size of middle conv layer at main path
+        filters: list of integers, the filterss of 3 conv layer at main path
+        stage: integer, current stage label, used for generating layer names
+        block: 'a','b'..., current block label, used for generating layer names
+    # Returns
+        Output tensor for the block.
+    """
+    '''
+     #This is a bottleneck architecture 1x1 conv + 3x3 conv + 1x1 conv
+     
+     used to reduce the number of computation between layers
+    '''
+    
+    filters1, filters2, filters3 = filters
+    if K.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+    conv_name_base = 'res' + str(stage) + block + '_branch'
+    bn_name_base = 'bn' + str(stage) + block + '_branch'
+
+
+   
+    x = Conv2D(filters1, (1, 1), name=conv_name_base + '2a')(input_tensor)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters2, kernel_size,
+               padding='same', name=conv_name_base + '2b')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    
+    #in the wide resnet they use dropout. I leave it in case it becomes necessary
+    if dropout_rate > 0:
+        x = Dropout(dropout_rate)(x)
+
+    x = layers.add([x, input_tensor])
+    x = Activation('relu')(x)
+    return x
+
+def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
+    """conv_block is the block that has a conv layer at shortcut
+    # Arguments
+        input_tensor: input tensor
+        kernel_size: defualt 3, the kernel size of middle conv layer at main path
+        filters: list of integers, the filterss of 3 conv layer at main path
+        stage: integer, current stage label, used for generating layer names
+        block: 'a','b'..., current block label, used for generating layer names
+    # Returns
+        Output tensor for the block.
+    Note that from stage 3, the first conv layer at main path is with strides=(2,2)
+    And the shortcut should have strides=(2,2) as well
+    """
+    
+    '''
+    This block is used to reduce the the size of the features maps using strides instead of maxpool
+    '''
+    filters1, filters2, filters3 = filters
+    if K.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+    conv_name_base = 'res' + str(stage) + block + '_branch'
+    bn_name_base = 'bn' + str(stage) + block + '_branch'
+
+    x = Conv2D(filters1, (1, 1), strides=strides,
+               name=conv_name_base + '2a')(input_tensor)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters2, kernel_size, padding='same',
+               name=conv_name_base + '2b')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+
+    shortcut = Conv2D(filters3, (1, 1), strides=strides,
+                      name=conv_name_base + '1')(input_tensor)
+    shortcut = BatchNormalization(axis=bn_axis, name=bn_name_base + '1')(shortcut)
+
+    x = layers.add([x, shortcut])
+    x = Activation('relu')(x)
+    return x
+
+def resnet50_model(input_shape, output_shape):
+    if K.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+
+    img_input =  Input(shape = input_shape)
+    x = Conv2D(64, (3, 7), strides=(2, 2), name='conv1')(img_input)
+    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+    x = Activation('relu')(x)
+    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
+
+    x = _conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x = _identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+    x = _identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+
+    x = _conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='b')
+    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='c')
+    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+
+    x = _conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+
+    x = _conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+    x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+
+    #x = AveragePooling2D((2, 7), name='avg_pool')(x)
+    #x = Flatten()(x)
+    x = GlobalMaxPooling2D()(x)
+    output = Dense(np.prod(output_shape), name='output', activation='softmax')(x)
+    output = Reshape(output_shape)(output)
+    
+    model = Model(img_input, output, name = 'resnet50')
+    
+    return model
 #%%
+##%%
 def main():
     import os
     import time
@@ -171,7 +312,7 @@ def main():
     np.random.seed(rand_seed)  
     
     epochs = 500
-    saving_period = 50
+    saving_period = 64
     
     skel_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = 50, 
@@ -181,7 +322,7 @@ def main():
     input_shape = X.shape[1:]
     output_shape = Y.shape[1:]
     
-    model = simple_model(input_shape, output_shape)
+    model = resnet50_model(input_shape, output_shape)
 
     base_name = model.name
     log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
@@ -207,9 +348,11 @@ def main():
                         verbose = 1,
                         callbacks=[tb, mcp]
                         )
-
+#
 if __name__ == '__main__':
     input_shape = (64, 900, 2)
     output_shape = (356,)
-
-    mod = larger_model(input_shape, output_shape)
+    
+    main()
+    #mod = restnet50_model(input_shape, output_shape)
+    #mod = larger_model(input_shape, output_shape)
