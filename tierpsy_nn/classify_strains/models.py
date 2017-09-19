@@ -317,7 +317,7 @@ def main():
     saving_period = 64
     
     skel_generator = SkeletonsFlow(main_file = main_file, 
-                                   n_batch = 50, 
+                                   n_batch = 32, 
                                    set_type='tiny'
                                    )
     X,Y = next(skel_generator)
@@ -350,7 +350,7 @@ def main():
                         verbose = 1,
                         callbacks=[tb, mcp]
                         )
-#
+
 if __name__ == '__main__':
     input_shape = (900, 49, 2)
     output_shape = (356,)
