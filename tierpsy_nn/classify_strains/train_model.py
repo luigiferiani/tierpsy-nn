@@ -27,7 +27,7 @@ def main(
     epochs = 5000,
     saving_period = 3,
     model_type = 'simple',
-    is_reduced = True
+    is_reduced = False
     ):
     
     if is_reduced:
