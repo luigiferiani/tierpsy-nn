@@ -31,6 +31,11 @@ def main(
     model_path = None,
     n_batch = None
     ):
+
+    # for reproducibility
+    rand_seed = 1337
+    np.random.seed(rand_seed)  
+    
     
     if is_reduced:
       valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
@@ -38,30 +43,6 @@ def main(
     else:
       valid_strains = None
 
-    # for reproducibility
-    rand_seed = 1337
-    np.random.seed(rand_seed)  
-    
-    if model_path is not None:
-      assert os.path.exists(load_model)
-      from models import load_model
-      model_fun = load_model(model_path)
-
-    elif model_type == 'simple':
-        from models import simple_model
-        model_fun = simple_model
-        
-    elif model_type == 'larger':
-        from models import larger_model
-        model_fun = larger_model
-        
-    elif model_type == 'resnet50':
-        from models import resnet50_model
-        model_fun = resnet50_model
-        
-    else:
-        ValueError('Not valid model_type')
-    
     if saving_period is None:
       #the saving period must be larger in the reduce form since it has 
       #less samples per epoch
@@ -70,10 +51,32 @@ def main(
       else:
         saving_period = 3
 
+    model = None
+    if model_path is not None:
+      assert os.path.exists(model_path)
+      from keras.models import load_model
+      model = load_model(model_path)
+      model_type = model.name
 
+    else:
+      if model_type == 'simple':
+        from models import simple_model
+        model_fun = simple_model
+        
+      elif model_type == 'larger':
+          from models import larger_model
+          model_fun = larger_model
+          
+      elif model_type == 'resnet50':
+          from models import resnet50_model
+          model_fun = resnet50_model
+          
+      else:
+          ValueError('Not valid model_type')
+    
     if n_batch is None:
       #resnet use more memory i  have to reduce the batch size to fit it in the GPU    
-      if model.name == 'resnet50':
+      if model_type == 'resnet50':
         n_batch = 32
       else:
         n_batch = 64
@@ -89,15 +92,18 @@ def main(
                                    valid_strains = valid_strains
                                    )
     
-    X,Y = next(train_generator)
-    input_shape = X.shape[1:]
-    output_shape = Y.shape[1:]
+    if model is None:
+      #create the model using the generator size if necessary
+      X,Y = next(train_generator)
+      input_shape = X.shape[1:]
+      output_shape = Y.shape[1:]
+      model = model_fun(input_shape, output_shape)
+    else:
+      #TODO assert the generator and the model match sizes
+      pass
     
-    
-    model = model_fun(input_shape, output_shape)
-    
+
     print(train_generator.skeletons_indexes['strain'].unique())
-    
     print(model.summary())    
     
     base_name = model.name
