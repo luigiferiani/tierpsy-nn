@@ -112,7 +112,7 @@ def main(
 
     log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
     pad=int(np.ceil(np.log10(epochs+1)))
-    checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{val_loss:.4f}-{val_acc}.h5' % (base_name, pad))
+    checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{val_loss:.4f}.h5' % (base_name, pad))
     
     
     tb = TensorBoard(log_dir = log_dir)
