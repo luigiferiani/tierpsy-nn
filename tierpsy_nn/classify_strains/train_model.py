@@ -25,9 +25,11 @@ else:
 
 def main(
     epochs = 5000,
-    saving_period = 3,
     model_type = 'simple',
-    is_reduced = False
+    is_reduced = False,
+    saving_period = None,
+    model_path = None,
+    n_batch = None
     ):
     
     if is_reduced:
@@ -40,25 +42,42 @@ def main(
     rand_seed = 1337
     np.random.seed(rand_seed)  
     
-    if model_type == 'simple':
+    if model_path is not None:
+      assert os.path.exists(load_model)
+      from models import load_model
+      model_fun = load_model(model_path)
+
+    elif model_type == 'simple':
         from models import simple_model
         model_fun = simple_model
-        n_batch = 64
         
     elif model_type == 'larger':
         from models import larger_model
         model_fun = larger_model
-        n_batch = 64
         
     elif model_type == 'resnet50':
         from models import resnet50_model
         model_fun = resnet50_model
-        n_batch = 32
         
     else:
         ValueError('Not valid model_type')
     
-    
+    if saving_period is None:
+      #the saving period must be larger in the reduce form since it has 
+      #less samples per epoch
+      if is_reduced:
+        saving_period = 12
+      else:
+        saving_period = 3
+
+
+    if n_batch is None:
+      #resnet use more memory i  have to reduce the batch size to fit it in the GPU    
+      if model.name == 'resnet50':
+        n_batch = 32
+      else:
+        n_batch = 64
+
     train_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
                                    set_type='train',
@@ -83,11 +102,11 @@ def main(
     
     base_name = model.name
     if is_reduced:
-      base_name = 'R_' + base_name 
+      base_name = 'R_' + base_name
 
     log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
     pad=int(np.ceil(np.log10(epochs+1)))
-    checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{loss:.4f}.h5' % (base_name, pad))
+    checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{val_loss:.4f}-{val_acc}.h5' % (base_name, pad))
     
     
     tb = TensorBoard(log_dir = log_dir)
