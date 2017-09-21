@@ -74,8 +74,6 @@ def main(
         else:
             dropout_rate = float(model_type.partition('_D')[-1])
             model_fun = partial(resnet50_model, dropout_rate=dropout_rate)
-        
-        
     else:
         ValueError('Not valid model_type')
     

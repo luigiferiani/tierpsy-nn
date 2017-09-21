@@ -203,7 +203,7 @@ def _identity_block(input_tensor, kernel_size, filters, stage, block, dropout_ra
     x = Activation('relu')(x)
     return x
 
-def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
+def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2), dropout_rate=dropout_rate):
     """conv_block is the block that has a conv layer at shortcut
     # Arguments
         input_tensor: input tensor
@@ -241,6 +241,10 @@ def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
 
+    if dropout_rate > 0:
+        #in the wide resnet they use dropout. I leave it in case it becomes necessary
+        x = Dropout(dropout_rate)(x)
+
     shortcut = Conv2D(filters3, (1, 1), strides=strides,
                       name=conv_name_base + '1')(input_tensor)
     shortcut = BatchNormalization(axis=bn_axis, name=bn_name_base + '1')(shortcut)
@@ -261,23 +265,23 @@ def resnet50_model(input_shape, output_shape, dropout_rate=0.0):
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2))(x)
 
-    x = _conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x = _conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [64, 64, 256], stage=2, block='b', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [64, 64, 256], stage=2, block='c', dropout_rate=dropout_rate)
 
-    x = _conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    x = _conv_block(x, 3, [128, 128, 512], stage=3, block='a', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [128, 128, 512], stage=3, block='b', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [128, 128, 512], stage=3, block='c', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [128, 128, 512], stage=3, block='d', dropout_rate=dropout_rate)
 
-    x = _conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    x = _conv_block(x, 3, [256, 256, 1024], stage=4, block='a', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='b', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='c', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='d', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='e', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='f', dropout_rate=dropout_rate)
 
-    x = _conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    x = _conv_block(x, 3, [512, 512, 2048], stage=5, block='a', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='b', dropout_rate=dropout_rate)
     x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='c', dropout_rate=dropout_rate)
 
