@@ -9,6 +9,7 @@ import numpy as np
 import os
 import time
 import sys
+from functools import partial
 
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.optimizers import Adam
@@ -50,10 +51,15 @@ def main(
         model_fun = larger_model
         n_batch = 64
         
-    elif model_type == 'resnet50':
+    elif 'resnet50' in model_type:
         from models import resnet50_model
-        model_fun = resnet50_model
         n_batch = 32
+        if not '_D' in model_type:
+          model_fun = resnet50_model
+        else:
+            dropout_rate = float(model_type.partition('_D')[-1])
+            model_fun = partial(resnet50_model, dropout_rate=dropout_rate)
+        
         
     else:
         ValueError('Not valid model_type')

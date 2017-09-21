@@ -194,8 +194,9 @@ def _identity_block(input_tensor, kernel_size, filters, stage, block, dropout_ra
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
     
-    #in the wide resnet they use dropout. I leave it in case it becomes necessary
+    
     if dropout_rate > 0:
+        #in the wide resnet they use dropout. I leave it in case it becomes necessary
         x = Dropout(dropout_rate)(x)
 
     x = layers.add([x, input_tensor])
@@ -248,37 +249,37 @@ def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)
     x = Activation('relu')(x)
     return x
 
-def resnet50_model(input_shape, output_shape):
+def resnet50_model(input_shape, output_shape, dropout_rate=0.0):
     if K.image_data_format() == 'channels_last':
         bn_axis = 3
     else:
         bn_axis = 1
 
     img_input =  Input(shape = input_shape)
-    x = Conv2D(64, (7, 3), strides=(2, 2), name='conv1')(img_input)
+    x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(img_input)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2))(x)
 
     x = _conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-    x = _identity_block(x, 3, [64, 64, 256], stage=2, block='b')
-    x = _identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+    x = _identity_block(x, 3, [64, 64, 256], stage=2, block='b', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [64, 64, 256], stage=2, block='c', dropout_rate=dropout_rate)
 
     x = _conv_block(x, 3, [128, 128, 512], stage=3, block='a')
-    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='b')
-    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='c')
-    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='b', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='c', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [128, 128, 512], stage=3, block='d', dropout_rate=dropout_rate)
 
     x = _conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
-    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
-    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
-    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
-    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
-    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='b', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='c', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='d', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='e', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [256, 256, 1024], stage=4, block='f', dropout_rate=dropout_rate)
 
     x = _conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
-    x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
-    x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+    x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='b', dropout_rate=dropout_rate)
+    x = _identity_block(x, 3, [512, 512, 2048], stage=5, block='c', dropout_rate=dropout_rate)
 
     x = AveragePooling2D((7, 2), name='avg_pool')(x)
     #x = Flatten()(x)
@@ -286,7 +287,7 @@ def resnet50_model(input_shape, output_shape):
     output = Dense(np.prod(output_shape), name='output', activation='softmax')(x)
     output = Reshape(output_shape)(output)
     
-    model = Model(img_input, output, name = 'resnet50')
+    model = Model(img_input, output, name = 'resnet50_D{}'.format(float(dropout_rate)))
     
     return model
 #%%
@@ -324,7 +325,7 @@ def main():
     input_shape = X.shape[1:]
     output_shape = Y.shape[1:]
     #%%
-    model = resnet50_model(input_shape, output_shape)
+    model = resnet50_model(input_shape, output_shape, dropout_rate=0.2)
 
     base_name = model.name
     log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
