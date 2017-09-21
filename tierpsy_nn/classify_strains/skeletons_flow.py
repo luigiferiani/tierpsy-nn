@@ -219,35 +219,16 @@ if __name__ == '__main__':
                                    valid_strains = valid_strains
                                    )
 
-    ii = 0
-    while True:
-        print('T')
-        X,Y = next(train_generator)
-
-        print('V')
-        X,Y = next(val_generator)
-        ii += 1
-        print(ii)
-        if ii >= 5:
-            break
+    
         
         
-    # X,Y = next(skel_generator)
+    X,Y = next(train_generator)
     
-    # import matplotlib.pylab as plt
+    import matplotlib.pylab as plt
     
-    # for x in X:
-        
-    #     plt.figure()
-    #     plt.subplot(2,1,1)
-    #     plt.imshow(x[:, :, 1].T, aspect='auto')
-    #     plt.subplot(2,1,2)
-    #     plt.imshow(x[:, :, 0].T, aspect='auto')
-    #     #%%
-
-
-
-
-
-
-    
+    for x in X:
+        plt.figure()
+        plt.subplot(2,1,1)
+        plt.imshow(x[:, :, 1].T, aspect='auto')
+        plt.subplot(2,1,2)
+        plt.imshow(x[:, :, 0].T, aspect='auto')
