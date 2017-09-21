@@ -59,8 +59,7 @@ def main(
       model = load_model(model_path)
       model_type = model.name
 
-    else:
-      if model_type == 'simple':
+    elif model_type == 'simple':
         from models import simple_model
         model_fun = simple_model
 
