@@ -52,7 +52,7 @@ class image_labeler_GUI(TrackerViewerAuxGUI):
 
 		self.sample_number = 0
 		self.ui.spinBox_samp_ord.setValue(0)
-
+		print(self.ui.comboBox_h5path.itemText(0))
 
 		
 		if os.path.exists(mask_file):
@@ -90,9 +90,9 @@ class image_labeler_GUI(TrackerViewerAuxGUI):
 
 		self.ui.spinBox_samp_ord.setValue(next_f)
 
-	def updateImGroup(self):
-		super().updateImGroup()
-		self.updateSampleNumber()
+	#def updateImGroup(self):
+	#	super().updateImGroup()
+	#	self.updateSampleNumber()
 
 
 
