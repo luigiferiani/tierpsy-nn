@@ -36,6 +36,7 @@ def main(
     epochs = 5000,
     model_type = 'simple',
     is_reduced = False,
+    is_wild_isolates = False,
     saving_period = None,
     model_path = None,
     n_batch = None
@@ -46,9 +47,14 @@ def main(
     np.random.seed(rand_seed)  
     
     if is_reduced:
+      bn_prefix = 'R_'
       valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
          'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
+    elif is_wild_isolates:
+      bn_prefix = 'W_'
+      valid_strains = wild_isolates 
     else:
+      bn_prefix = ''
       valid_strains = None
 
     if saving_period is None:
@@ -116,9 +122,8 @@ def main(
     print(train_generator.skeletons_indexes['strain'].unique())
     print(model.summary())    
     
-    base_name = model.name
-    if is_reduced:
-      base_name = 'R_' + base_name
+    base_name = bn_prefix + model.name
+
 
     log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
     pad=int(np.ceil(np.log10(epochs+1)))
