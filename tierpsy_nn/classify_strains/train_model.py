@@ -16,6 +16,14 @@ from keras.optimizers import Adam
 
 from skeletons_flow import SkeletonsFlow
 
+wild_isolates = ['JU393', 'JU402', 'ED3054', 'JU394', 
+                 'N2', 'JU440', 'ED3021', 'ED3017', 
+                 'JU438', 'JU298', 'JU345', 'RC301', 
+                 'VC40429', 'AQ2947', 'ED3049',
+                 'PS312', 'LSJ1', 'JU258', 'MY16', 
+                 'CB4852', 'CB4856', 'CB4853'
+                 ]
+
 
 if sys.platform == 'linux':
     log_dir_root = '/work/ajaver/classify_strains/results'
@@ -36,7 +44,6 @@ def main(
     # for reproducibility
     rand_seed = 1337
     np.random.seed(rand_seed)  
-    
     
     if is_reduced:
       valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
