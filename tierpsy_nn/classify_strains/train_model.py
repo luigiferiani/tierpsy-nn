@@ -27,7 +27,8 @@ wild_isolates = ['JU393', 'JU402', 'ED3054', 'JU394',
 
 if sys.platform == 'linux':
     log_dir_root = '/work/ajaver/classify_strains/results'
-    main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
+    main_file = os.path.join(os.environ['TMPDIR'], 'SWDB_skel_smoothed.hdf5')
+    #main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
 else:        
     log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
     main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
