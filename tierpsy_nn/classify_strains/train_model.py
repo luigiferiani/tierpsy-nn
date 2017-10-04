@@ -40,7 +40,8 @@ def main(
     is_wild_isolates = False,
     saving_period = None,
     model_path = None,
-    n_batch = None
+    n_batch = None,
+    is_angle = False
     ):
 
     # for reproducibility
@@ -57,6 +58,9 @@ def main(
     else:
       bn_prefix = ''
       valid_strains = None
+      
+    if is_angle:
+        bn_prefix += 'ang_'
 
     if saving_period is None:
       #the saving period must be larger in the reduce form since it has 
@@ -101,12 +105,14 @@ def main(
     train_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
                                    set_type='train',
-                                   valid_strains = valid_strains
+                                   valid_strains = valid_strains,
+                                   is_angle = is_angle
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
                                    set_type='val',
-                                   valid_strains = valid_strains
+                                   valid_strains = valid_strains,
+                                   is_angle = is_angle
                                    )
     
     if model is None:

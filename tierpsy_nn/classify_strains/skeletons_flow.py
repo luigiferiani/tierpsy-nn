@@ -10,6 +10,20 @@ import tables
 import numpy as np
 import random
 import time
+import warnings
+
+def _h_angles(skeletons):
+    dd = np.diff(skeletons,axis=1);
+    angles = np.arctan2(dd[...,0], dd[...,1])
+    
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        angles = np.unwrap(angles, axis=1);
+    
+    mean_angles = np.mean(angles, axis=1)
+    angles -= mean_angles[:, None]
+    
+    return angles, mean_angles
 
 def _h_divide_in_sets(strain_groups,
                    test_frac = 0.1,
@@ -88,7 +102,8 @@ class SkeletonsFlow():
                 expected_fps = 30,
                 sample_size_frames_s = 90,
                 sample_frequency_s = 1/10,
-                body_range = (8, 41)
+                body_range = (8, 41),
+                is_angle = False
                 ):
         
         self.n_batch = n_batch
@@ -96,6 +111,7 @@ class SkeletonsFlow():
         self.sample_frequency  = sample_frequency_s*expected_fps
         self.main_file = main_file
         self.body_range = body_range
+        self.is_angle = is_angle
         
         with pd.HDFStore(self.main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
@@ -176,7 +192,13 @@ class SkeletonsFlow():
     
     def next_single(self):
          strain_id, skeletons = self._random_choice()
-         X = self._random_transform(skeletons)
+
+         if not self.is_angle:
+            X = self._random_transform(skeletons)
+         else:
+            X, _ = _h_angles(skeletons)
+            X = X[..., None]
+
          Y = np.zeros(self.n_clases, np.int32)
          Y[strain_id] = 1
          return X,Y
