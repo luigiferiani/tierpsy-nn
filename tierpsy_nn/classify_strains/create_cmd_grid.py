@@ -27,22 +27,22 @@ source activate tierpsy
 cp $WORK/classify_strains/train_set/SWDB_skel_smoothed.hdf5 $TMPDIR/SWDB_skel_smoothed.hdf5
 
 KERAS_BACKEND=tensorflow python $HOME/tierpsy-nn/tierpsy_nn/classify_strains/train_model.py \
---model_type 'resnet50' --is_wild_isolates True --saving_period 10 \
+--model_type 'resnet50' --is_wild_isolates True --saving_period 40 \
 --sample_size_frames_s {sample_size} --sample_frequency_s {frequency}
 ## This tells the batch manager to execute the program cudaexecutable in the cuda directory of the users home directory.
 '''
 
-save_dir = '$WORK/run_scripts/classify_strains/grid_test'
-if not os.path.exists:
+save_dir = '/home/ajaver/run_tests/classify_strains/grid_test'
+if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
-save_str = save_dir + 'S{sample_size}_F{frequency:.2}_W_restnet50.sh'
+save_str = os.path.join(save_dir, 'S{sample_size}_F{frequency:.2}_W_restnet50.sh')
 
 sample_size_frames_s_dflt = 90
-sample_frequency_s_dflt = 1/10
+sample_frequency_s_dflt = 1/10.
 
-for sf in [1/30, 1/10, 1/3, 1., 3., 6.]:
-    args = dict(sample_size = sample_size_frames_s_dflt, frequency=sf)
+for sf in [1/30., 1/10., 1/3., 1., 3., 6.]:
+    args = dict(sample_size = sample_size_frames_s_dflt, frequency=float(sf))
     cmd = cmd_str.format(**args)
     save_name = save_str.format(**args)
     print(save_name)
@@ -58,4 +58,3 @@ for ts in [15, 30, 60, 90, 120, 300, 600, 840]:
     
     with open(save_name, 'w') as fid:
         fid.write(cmd)
-    
