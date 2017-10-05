@@ -8,6 +8,8 @@ tensorboard --logdir=$WORK/food/results/logs/ --port=7007
 tensorboard --logdir=$WORK/egg_counter/results/logs/ --port=7007
 tensorboard --logdir=$WORK/classify_strains/results/logs/ --port=7007
 
+rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/logs /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/logs
+
 scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_bn_20170709_123247/unet_norm_bn-08249-0.0071.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
 
 scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_20170708_214716/unet_norm-09599-0.0098.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food

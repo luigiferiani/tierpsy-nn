@@ -9,7 +9,7 @@ import os
 
 cmd_str = '''
 #!/bin/sh
-#PBS -l walltime=00:30:00
+#PBS -l walltime=40:00:00
 ## This tells the batch manager to limit the walltime for the job to XX hours, YY minutes and ZZ seconds.
 
 #PBS -l select=1:ncpus=2:mem=8gb:ngpus=1
