@@ -9,14 +9,15 @@ import numpy as np
 import os
 import time
 import sys
+import math
 from functools import partial
 
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.optimizers import Adam
 
-from skeletons_flow import SkeletonsFlow
+from skeletons_flow import SkeletonsFlow, wild_isolates
 
-wild_isolates = ['JU393', 'JU402', 'ED3054', 'JU394', 
+wild_isolates_old = ['JU393', 'JU402', 'ED3054', 'JU394', 
                  'N2', 'JU440', 'ED3021', 'ED3017', 
                  'JU438', 'JU298', 'JU345', 'RC301', 
                  'VC40429', 'AQ2947', 'ED3049',
@@ -33,6 +34,10 @@ else:
     log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
     main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
 
+
+sample_size_frames_s_dflt = 90
+sample_frequency_s_dflt = 1/10
+
 def main(
     epochs = 5000,
     model_type = 'simple',
@@ -40,8 +45,10 @@ def main(
     is_wild_isolates = False,
     saving_period = None,
     model_path = None,
+    is_angle = False,
     n_batch = None,
-    is_angle = False
+    sample_size_frames_s = sample_size_frames_s_dflt,
+    sample_frequency_s = sample_frequency_s_dflt
     ):
 
     # for reproducibility
@@ -65,7 +72,7 @@ def main(
     if saving_period is None:
       #the saving period must be larger in the reduce form since it has 
       #less samples per epoch
-      if is_reduced:
+      if is_reduced or is_wild_isolates:
         saving_period = 12
       else:
         saving_period = 3
@@ -98,21 +105,30 @@ def main(
     if n_batch is None:
       #resnet use more memory i  have to reduce the batch size to fit it in the GPU    
       if 'resnet50' in model_type:
-        n_batch = 32
+        n_batch_base = 32
       else:
-        n_batch = 64
+        n_batch_base = 64
 
+        factor = sample_size_frames_s/sample_size_frames_s_dflt
+        factor *= sample_frequency_s_dflt/sample_frequency_s
+        n_batch = min(math.floor(n_batch_base/factor), 1)
+    
     train_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
                                    set_type='train',
+                                   sample_size_frames_s = sample_size_frames_s,
+                                   sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
                                    is_angle = is_angle
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
                                    set_type='val',
+                                   sample_size_frames_s = sample_size_frames_s,
+                                   sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
                                    is_angle = is_angle
+                                   
                                    )
     
     if model is None:

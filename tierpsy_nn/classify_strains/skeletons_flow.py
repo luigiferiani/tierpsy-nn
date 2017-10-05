@@ -12,6 +12,16 @@ import random
 import time
 import warnings
 
+wild_isolates = ['JU393', 'ED3054', 'JU394', 
+                 'N2', 'JU440', 'ED3021', 'ED3017', 
+                 'JU438', 'JU298', 'JU345', 'RC301', 
+                 'AQ2947', 'ED3049',
+                 'LSJ1', 'JU258', 'MY16', 
+                 'CB4852', 'CB4856', 'CB4853',
+                 ]
+
+
+
 def _h_angles(skeletons):
     dd = np.diff(skeletons,axis=1);
     angles = np.arctan2(dd[...,0], dd[...,1])
@@ -136,10 +146,10 @@ class SkeletonsFlow():
         if valid_strains is not None:
             skeletons_indexes = skeletons_indexes[skeletons_indexes['strain'].isin(valid_strains)]
 
-
+        
         self.skeletons_indexes = skeletons_indexes
         self.skeletons_groups = skeletons_indexes.groupby('strain_id')
-        self.strain_ids = self.skeletons_groups.indices.keys()
+        self.strain_ids = list(map(int, self.skeletons_groups.indices.keys()))
         
     def _random_choice(self):
         strain_id, = random.sample(self.strain_ids, 1)
@@ -212,6 +222,7 @@ class SkeletonsFlow():
         return self.skeletons_indexes.shape[0]
     
 if __name__ == '__main__':
+    import matplotlib.pylab as plt
     import sys
     if sys.platform == 'linux':
         log_dir_root = '/work/ajaver/classify_strains/results'
@@ -220,37 +231,88 @@ if __name__ == '__main__':
         log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
         main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
 
-    valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
-         'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
-
-    n_batch = 64
-
-    train_generator = SkeletonsFlow(main_file = main_file, 
-                                   n_batch = n_batch, 
-                                   set_type='train',
-                                   valid_strains = valid_strains
-                                   )
-    val_generator = SkeletonsFlow(main_file = main_file, 
-                                   n_batch = n_batch, 
-                                   set_type='val',
-                                   valid_strains = valid_strains
-                                   )
-    test_generator = SkeletonsFlow(main_file = main_file, 
-                                   n_batch = n_batch, 
-                                   set_type='test',
-                                   valid_strains = valid_strains
-                                   )
-
+    if False:
+        #valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
+        #     'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
+        
+        valid_strains = None
+        n_batch = 64
+        sample_size_frames_s = 90
+    
+        train_generator = SkeletonsFlow(main_file = main_file, 
+                                       n_batch = n_batch, 
+                                       set_type='train',
+                                       valid_strains = valid_strains
+                                       )
+        val_generator = SkeletonsFlow(main_file = main_file, 
+                                       n_batch = n_batch, 
+                                       set_type='val',
+                                       valid_strains = valid_strains
+                                       )
+        test_generator = SkeletonsFlow(main_file = main_file, 
+                                       n_batch = n_batch, 
+                                       set_type='test',
+                                       valid_strains = valid_strains
+                                       )
     
         
+            
+            
+        X,Y = next(train_generator)
         
-    X,Y = next(train_generator)
+        
+        
+        for x in X:
+            plt.figure()
+            plt.subplot(2,1,1)
+            plt.imshow(x[:, :, 1].T, aspect='auto')
+            plt.subplot(2,1,2)
+            plt.imshow(x[:, :, 0].T, aspect='auto')
+        #%%
+        dd = train_generator.skeletons_indexes['fin'] - train_generator.skeletons_indexes['ini']
+        
     
-    import matplotlib.pylab as plt
-    
-    for x in X:
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.imshow(x[:, :, 1].T, aspect='auto')
-        plt.subplot(2,1,2)
-        plt.imshow(x[:, :, 0].T, aspect='auto')
+    #%%
+    if False:
+        sample_frequency_s = [1/30, 1/10, 1/3, 1, 3, 6]
+        for sf in sample_frequency_s:
+            print('*** {} ***'.format(sf))
+            gen = SkeletonsFlow(main_file = main_file, 
+                                   n_batch = 1, 
+                                   set_type = 'val',
+                                   valid_strains = wild_isolates,
+                                   sample_frequency_s = sf
+                                   )
+            
+            X,Y = next(gen)
+            x = X[0]
+            plt.figure()
+            plt.subplot(2,1,1)
+            plt.imshow(x[:, :, 1].T, aspect='auto', interpolation='none')
+            plt.subplot(2,1,2)
+            plt.imshow(x[:, :, 0].T, aspect='auto', interpolation='none')
+            
+            print(X.shape)
+        
+        for ts in [15, 30, 60, 90, 120, 300, 600, 840]:
+            gen = SkeletonsFlow(main_file = main_file, 
+                                   n_batch = 1, 
+                                   set_type = 'val',
+                                   valid_strains = wild_isolates,
+                                   sample_size_frames_s = ts
+                                   )
+            
+            print('*** {} ***'.format(ts))
+            dd = gen.skeletons_indexes['strain'].value_counts()
+            print(dd)
+            print(set(wild_isolates)-set(dd.index))
+        
+    #%%
+    gen = SkeletonsFlow(main_file = main_file, 
+                               n_batch = 1, 
+                               set_type = 'val',
+                               valid_strains = wild_isolates,
+                               sample_frequency_s = 1/30,
+                               sample_size_frames_s = 840
+                               )
+    X,Y = next(gen)
