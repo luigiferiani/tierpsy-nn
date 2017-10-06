@@ -36,7 +36,7 @@ else:
     main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
 
 
-sample_size_frames_s_dflt = 90
+sample_size_frames_s_dflt = 90.
 sample_frequency_s_dflt = 1/10
 
 def main(
@@ -65,7 +65,8 @@ def main(
     else:
       bn_prefix = ''
       valid_strains = None
-      
+    print(valid_strains)
+
     if is_angle:
         bn_prefix += 'ang_'
 
@@ -110,8 +111,8 @@ def main(
         n_batch_base = 64
 
     factor = sample_size_frames_s/sample_size_frames_s_dflt
-    factor *= sample_frequency_s_dflt/sample_frequency_s
-    n_batch = min(math.floor(n_batch_base/factor), 1)
+    factor *= (sample_frequency_s_dflt/sample_frequency_s)
+    n_batch = max(int(math.floor(n_batch_base/factor)), 1)
 
     
     train_generator = SkeletonsFlow(main_file = main_file, 
@@ -143,9 +144,10 @@ def main(
       pass
     
 
-    print(train_generator.skeletons_indexes['strain'].unique())
     print(model.summary())    
-    
+    print(train_generator.skeletons_indexes['strain'].unique())
+    print(train_generator.n_batch)
+
     base_name = bn_prefix + model.name
 
 
