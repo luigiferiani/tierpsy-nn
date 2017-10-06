@@ -149,9 +149,9 @@ def main(
     print(train_generator.n_batch)
 
     base_name = bn_prefix + model.name
+    base_name = 'S{}_F{:.2}_{}'.format(sample_size_frames_s, sample_frequency_s, base_name)
 
-
-    log_dir = os.path.join(log_dir_root, 'logs', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
+    log_dir = os.path.join(log_dir_root, 'logsN', '%s_%s' % (base_name, time.strftime('%Y%m%d_%H%M%S')))
     pad=int(np.ceil(np.log10(epochs+1)))
     checkpoint_file = os.path.join(log_dir, '%s-{epoch:0%id}-{val_loss:.4f}.h5' % (base_name, pad))
     
