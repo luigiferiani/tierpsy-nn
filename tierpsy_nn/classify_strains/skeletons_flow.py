@@ -195,9 +195,9 @@ class SkeletonsFlow():
             skel_r[:, ii, :] = np.dot(rot_matrix, skeletons[:, ii, :].T).T
         
         #random mirrowing 
-        for ii in range(skel_r.shape[-1]):
-            skel_r[:, :, ii] *= random.choice([-1, 1])
-            
+        #for ii in range(skel_r.shape[-1]):
+        #    skel_r[:, :, ii] *= random.choice([-1, 1])
+         
         return skel_r
     
     def next_single(self):

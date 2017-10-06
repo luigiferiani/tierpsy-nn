@@ -24,7 +24,8 @@ wild_isolates_old = ['JU393', 'JU402', 'ED3054', 'JU394',
                  'PS312', 'LSJ1', 'JU258', 'MY16', 
                  'CB4852', 'CB4856', 'CB4853'
                  ]
-
+reduced_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
+         'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
 
 if sys.platform == 'linux':
     log_dir_root = '/work/ajaver/classify_strains/results'
@@ -57,8 +58,7 @@ def main(
     
     if is_reduced:
       bn_prefix = 'R_'
-      valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
-         'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
+      valid_strains = reduced_strains
     elif is_wild_isolates:
       bn_prefix = 'W_'
       valid_strains = wild_isolates 
@@ -109,9 +109,10 @@ def main(
       else:
         n_batch_base = 64
 
-        factor = sample_size_frames_s/sample_size_frames_s_dflt
-        factor *= sample_frequency_s_dflt/sample_frequency_s
-        n_batch = min(math.floor(n_batch_base/factor), 1)
+    factor = sample_size_frames_s/sample_size_frames_s_dflt
+    factor *= sample_frequency_s_dflt/sample_frequency_s
+    n_batch = min(math.floor(n_batch_base/factor), 1)
+
     
     train_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
