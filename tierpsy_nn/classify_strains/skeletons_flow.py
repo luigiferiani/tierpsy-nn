@@ -231,12 +231,13 @@ if __name__ == '__main__':
         log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
         main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
 
-    if False:
+    if True:
         #valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
         #     'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
         
-        valid_strains = None
-        n_batch = 64
+        #valid_strains = None
+        valid_strains = ['N2']
+        n_batch = 2
         sample_size_frames_s = 90
     
         train_generator = SkeletonsFlow(main_file = main_file, 
@@ -254,20 +255,38 @@ if __name__ == '__main__':
                                        set_type='test',
                                        valid_strains = valid_strains
                                        )
-    
+        
         
             
             
+        
+        
+        
+        #%%
+        with pd.HDFStore(train_generator.main_file, 'r') as fid:
+            strains_codes = fid['/strains_codes']
         X,Y = next(train_generator)
         
-        
-        
-        for x in X:
+        ss_ = strains_codes.loc[np.argmax(Y, axis=1)]['strain']
+        #%%
+        for x, ss in zip(X, ss_):
             plt.figure()
             plt.subplot(2,1,1)
-            plt.imshow(x[:, :, 1].T, aspect='auto')
+            plt.imshow(x[:, :, 1].T, aspect='auto', interpolation='none')
             plt.subplot(2,1,2)
-            plt.imshow(x[:, :, 0].T, aspect='auto')
+            plt.imshow(x[:, :, 0].T, aspect='auto', interpolation='none')
+            
+            plt.suptitle(ss)
+            
+            
+            #%%
+            angs, ang_ = _h_angles(x)
+            plt.imshow(angs.T, aspect='auto', interpolation='none')
+            #%%
+            #dat = x[::25]
+            #dd = np.arange(dat.shape[0])*1000
+            #plt.figure()
+            #plt.plot(dat[...,0].T+ dd, dat[...,1].T)
         #%%
         dd = train_generator.skeletons_indexes['fin'] - train_generator.skeletons_indexes['ini']
         
@@ -307,12 +326,12 @@ if __name__ == '__main__':
             print(dd)
             print(set(wild_isolates)-set(dd.index))
         
-    #%%
-    gen = SkeletonsFlow(main_file = main_file, 
-                               n_batch = 1, 
-                               set_type = 'val',
-                               valid_strains = wild_isolates,
-                               sample_frequency_s = 1/30,
-                               sample_size_frames_s = 840
-                               )
-    X,Y = next(gen)
+#    #%%
+#    gen = SkeletonsFlow(main_file = main_file, 
+#                               n_batch = 1, 
+#                               set_type = 'val',
+#                               valid_strains = wild_isolates,
+#                               sample_frequency_s = 1/30,
+#                               sample_size_frames_s = 840
+#                               )
+#    X,Y = next(gen)

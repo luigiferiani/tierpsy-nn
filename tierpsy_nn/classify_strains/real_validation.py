@@ -59,17 +59,17 @@ if __name__ == '__main__':
     sample_frequency_s = 1/10.
     is_angle = False
     
-    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/resnet50_20170925_225727/resnet50-0077-4.1958.h5'
-    valid_strains = None
-    sample_size_frames_s = 90
-    sample_frequency_s = 1/10.
-    is_angle = False
+#    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/resnet50_20170925_225727/resnet50-0077-4.1958.h5'
+#    valid_strains = None
+#    sample_size_frames_s = 90
+#    sample_frequency_s = 1/10.
+#    is_angle = False
     
-    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/W_ang_resnet50_D0.0_20171005_120834/W_ang_resnet50_D0.0-0311-1.6940.h5'
-    valid_strains = wild_isolates_old
-    sample_size_frames_s = 90
-    sample_frequency_s = 1/10.
-    is_angle = True
+#    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/W_ang_resnet50_D0.0_20171005_120834/W_ang_resnet50_D0.0-0311-1.6940.h5'
+#    valid_strains = wild_isolates_old
+#    sample_size_frames_s = 90
+#    sample_frequency_s = 1/10.
+#    is_angle = True
     
     
     print('loading model...')
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     labels = sorted(list(set(y_true)))
     #%%
     dd = sum(x[0] == x[1] for x in chuck_p)
-    print('Accuracy per chunck: {}'.format(dd/len(chuck_p)))
+    print('Accuracy by chunk: {}'.format(dd/len(chuck_p)))
     
     cm_c = confusion_matrix(*zip(*chuck_p), labels=labels)
     plt.figure(figsize=(21,21))
@@ -167,9 +167,9 @@ if __name__ == '__main__':
     
     
     
-    
+    #%%
     dd = sum(x[0] == x[1] for x in zip(y_pred, y_true))
-    print('Accuracy per video: {}'.format(dd/len(y_true)))
+    print('Accuracy by video: {}'.format(dd/len(y_true)))
     
     cm = confusion_matrix(y_true, y_pred, labels=labels)
     plt.figure(figsize=(21,21))
