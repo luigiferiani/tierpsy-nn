@@ -6,7 +6,7 @@ source activate tierpsy
 tensorboard --logdir=$WORK/egg_laying/logs/ --port=7007
 tensorboard --logdir=$WORK/food/results/logs/ --port=7007
 tensorboard --logdir=$WORK/egg_counter/results/logs/ --port=7007
-tensorboard --logdir=$WORK/classify_strains/results/logs/ --port=7007
+tensorboard --logdir=$WORK/classify_strains/results/logsN/ --port=7007
 
 rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/logs /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/logs
 

@@ -20,8 +20,6 @@ wild_isolates = ['JU393', 'ED3054', 'JU394',
                  'CB4852', 'CB4856', 'CB4853',
                  ]
 
-
-
 def _h_angles(skeletons):
     dd = np.diff(skeletons,axis=1);
     angles = np.arctan2(dd[...,0], dd[...,1])
