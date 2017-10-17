@@ -33,77 +33,14 @@ def _h_angles(skeletons):
     
     return angles, mean_angles
 
-def _h_divide_in_sets(strain_groups,
-                   test_frac = 0.1,
-                   val_frac = 0.1):
-    
-    
-    indexes_per_set = dict(
-            test = [],
-            val = [],
-            train = [],
-            tiny = []
-            )
-    
-    #used for the tiny set
-    dd = strain_groups.agg({'strain':'count'})
-    top_strains = dd.sort_values(by='strain').index[-5:]
-    
-    for strain_id, dat in strain_groups:
-        experiments_id = dat.experiment_id.unique()
-        random.shuffle(experiments_id)
-        
-        tot = len(experiments_id)
-        rr = (int(np.ceil(test_frac*tot)), 
-              int(np.ceil((test_frac+val_frac)*tot))
-              )
-        
-        exp_per_set = dict(
-        test = experiments_id[:rr[0]+1],
-        val = experiments_id[rr[0]:rr[1]+1],
-        train = experiments_id[rr[1]:]
-        )
-        
-        for k, val in exp_per_set.items():
-            dd = dat[dat['experiment_id'].isin(exp_per_set[k])].index
-            assert len(dd) > 0
-            indexes_per_set[k].append(dd)
-    
-            
-            if strain_id in top_strains and k == 'train': 
-                indexes_per_set['tiny'].append(dd[:10])
-            
-    
-    indexes_per_set = {k:np.concatenate(val) for k,val in indexes_per_set.items()}
-    
-    return indexes_per_set
 
-def _add_index(main_file, val_frac=0.1, test_frac=0.1):
-    #%% divide data in subsets for training and testing    
-    
-    skel_g = SkeletonsFlow(n_batch = 16)
-    skeletons, strain_id = skel_g.next_single()
-    
-    random.seed(777)
-    indexes_per_set = _h_divide_in_sets(skel_g.skeletons_groups)
-    
-    with tables.File(main_file, 'r+') as fid: 
-        if '/index_groups' in fid:
-            fid.remove_node('/index_groups', recursive=True)
-        
-        fid.create_group('/', 'index_groups')
-        
-        for field in indexes_per_set:
-            fid.create_carray('/index_groups', 
-                          field, 
-                          obj = indexes_per_set[field])
 
     #%%
 
 class SkeletonsFlow():
     def __init__(self,
                 n_batch,
-                main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5',
+                main_file,
                 set_type = None,
                 min_num_samples = 1,
                 valid_strains = None,
@@ -224,10 +161,11 @@ if __name__ == '__main__':
     import sys
     if sys.platform == 'linux':
         log_dir_root = '/work/ajaver/classify_strains/results'
-        main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
+        #main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
     else:        
         log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
-        main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
+        #main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
+        main_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed.hdf5'
 
     if True:
         #valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
@@ -253,12 +191,6 @@ if __name__ == '__main__':
                                        set_type='test',
                                        valid_strains = valid_strains
                                        )
-        
-        
-            
-            
-        
-        
         
         #%%
         with pd.HDFStore(train_generator.main_file, 'r') as fid:
