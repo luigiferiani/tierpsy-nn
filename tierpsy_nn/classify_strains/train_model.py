@@ -15,7 +15,7 @@ from functools import partial
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.optimizers import Adam
 
-from skeletons_flow import SkeletonsFlow, wild_isolates
+from skeletons_flow import SkeletonsFlow, wild_isolates_WT2, CeNDR_base_strains
 
 wild_isolates_old = ['JU393', 'JU402', 'ED3054', 'JU394', 
                  'N2', 'JU440', 'ED3021', 'ED3017', 
@@ -27,13 +27,18 @@ wild_isolates_old = ['JU393', 'JU402', 'ED3054', 'JU394',
 reduced_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
          'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
 
-if sys.platform == 'linux':
-    log_dir_root = '/work/ajaver/classify_strains/results'
-    main_file = os.path.join(os.environ['TMPDIR'], 'SWDB_skel_smoothed.hdf5')
-    #main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
-else:        
-    log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
-    main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
+
+
+def _h_get_paths(base_file):
+    if sys.platform == 'linux':
+        log_dir_root = '/work/ajaver/classify_strains/results'
+        main_file = os.path.join(os.environ['TMPDIR'], base_file)
+        #main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
+    else:        
+        log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
+        main_file = os.path.join('/Users/ajaver/Desktop', base_file)
+    
+    return log_dir_root, main_file
 
 
 sample_size_frames_s_dflt = 90.
@@ -44,6 +49,7 @@ def main(
     model_type = 'simple',
     is_reduced = False,
     is_wild_isolates = False,
+    is_CeNDR = False,
     saving_period = None,
     model_path = None,
     is_angle = False,
@@ -56,12 +62,21 @@ def main(
     rand_seed = 1337
     np.random.seed(rand_seed)  
     
+    if not is_CeNDR:
+        base_file = 'SWDB_skel_smoothed.hdf5'
+    else:
+        base_file = 'CeNDR_skel_smoothed.hdf5'
+    log_dir_root, main_file = _h_get_paths(base_file)
+    
     if is_reduced:
       bn_prefix = 'R_'
-      valid_strains = reduced_strains
+      if is_CeNDR:
+          valid_strains = CeNDR_base_strains
+      else:
+          valid_strains = reduced_strains
     elif is_wild_isolates:
       bn_prefix = 'W_'
-      valid_strains = wild_isolates 
+      valid_strains = wild_isolates_WT2 
     else:
       bn_prefix = ''
       valid_strains = None

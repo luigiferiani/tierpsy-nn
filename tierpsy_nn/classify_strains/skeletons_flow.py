@@ -12,13 +12,16 @@ import random
 import time
 import warnings
 
-wild_isolates = ['JU393', 'ED3054', 'JU394', 
+wild_isolates_WT2 = ['JU393', 'ED3054', 'JU394', 
                  'N2', 'JU440', 'ED3021', 'ED3017', 
                  'JU438', 'JU298', 'JU345', 'RC301', 
                  'AQ2947', 'ED3049',
                  'LSJ1', 'JU258', 'MY16', 
                  'CB4852', 'CB4856', 'CB4853',
                  ]
+
+CeNDR_base_strains = ['N2', 'ED3017', 'CX11314', 'LKC34', 'MY16', 'DL238', 'JT11398', 'JU775',
+       'JU258', 'MY23', 'EG4725', 'CB4856']
 
 def _h_angles(skeletons):
     dd = np.diff(skeletons,axis=1);
@@ -52,21 +55,35 @@ class SkeletonsFlow():
                 ):
         
         self.n_batch = n_batch
-        self.sample_size_frames = sample_size_frames_s*expected_fps
-        self.sample_frequency  = sample_frequency_s*expected_fps
+        self.sample_size_frames_s = sample_size_frames_s
+        self.sample_frequency_s  = sample_frequency_s
+        self.n_samples = int(round(sample_size_frames_s/sample_frequency_s))
         self.main_file = main_file
         self.body_range = body_range
         self.is_angle = is_angle
+        self.expected_fps = expected_fps
         
         with pd.HDFStore(self.main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
             df2 = fid['/strains_codes']
+            df3 = fid['/experiments_data']
         
         #number of classes for the one-hot encoding
         self.n_clases = df2['strain_id'].max() + 1
-        
         skeletons_indexes = pd.merge(df1, df2, on='strain')
-        good = skeletons_indexes.apply(lambda x : x['fin'] - x['ini'] >= self.sample_size_frames, axis=1)
+        
+        cols_to_use = df3.columns.difference(skeletons_indexes.columns)
+        skeletons_indexes = pd.merge(skeletons_indexes, 
+                                     df3[cols_to_use], 
+                                     left_on='experiment_id', 
+                                     right_on='id'
+                                     )
+        
+        if 'fps' in skeletons_indexes:
+            good = skeletons_indexes.apply(lambda x : x['fps']*(x['fin'] - x['ini']) >= self.sample_size_frames_s, axis=1)
+        else:
+            good = skeletons_indexes.apply(lambda x : self.expected_fps*(x['fin'] - x['ini']) >= self.sample_size_frames_s, axis=1)
+        
         skeletons_indexes = skeletons_indexes[good]
         
         if set_type is not None:
@@ -92,10 +109,19 @@ class SkeletonsFlow():
         ind, = random.sample(list(gg.index), 1)
         dat = gg.loc[ind]
         
-        r_f = dat['fin'] - self.sample_size_frames
+        if 'fps' in dat:
+            fps = dat['fps']
+        else:
+            fps = self.expected_fps
+        
+        #randomize the start
+        sample_size_frames = int(round(self.sample_size_frames_s*fps))
+        r_f = dat['fin'] - sample_size_frames
         ini_r = random.randint(dat['ini'], r_f)
         
-        row_indices = np.arange(ini_r, ini_r + self.sample_size_frames, self.sample_frequency)
+        #get the expected row indexes
+        row_indices = np.linspace(0, self.sample_size_frames_s, self.n_samples)
+        row_indices = row_indices*fps + ini_r
         row_indices = np.round(row_indices).astype(np.int32)
         
         while True:
@@ -171,8 +197,8 @@ if __name__ == '__main__':
         #valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
         #     'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
         
-        #valid_strains = None
-        valid_strains = ['N2']
+        valid_strains = None
+        #valid_strains = ['N2']
         n_batch = 2
         sample_size_frames_s = 90
     
@@ -229,7 +255,7 @@ if __name__ == '__main__':
             gen = SkeletonsFlow(main_file = main_file, 
                                    n_batch = 1, 
                                    set_type = 'val',
-                                   valid_strains = wild_isolates,
+                                   valid_strains = wild_isolates_WT2,
                                    sample_frequency_s = sf
                                    )
             
@@ -240,21 +266,20 @@ if __name__ == '__main__':
             plt.imshow(x[:, :, 1].T, aspect='auto', interpolation='none')
             plt.subplot(2,1,2)
             plt.imshow(x[:, :, 0].T, aspect='auto', interpolation='none')
-            
             print(X.shape)
         
         for ts in [15, 30, 60, 90, 120, 300, 600, 840]:
             gen = SkeletonsFlow(main_file = main_file, 
                                    n_batch = 1, 
                                    set_type = 'val',
-                                   valid_strains = wild_isolates,
+                                   valid_strains = wild_isolates_WT2,
                                    sample_size_frames_s = ts
                                    )
             
             print('*** {} ***'.format(ts))
             dd = gen.skeletons_indexes['strain'].value_counts()
             print(dd)
-            print(set(wild_isolates)-set(dd.index))
+            print(set(wild_isolates_WT2)-set(dd.index))
         
 #    #%%
 #    gen = SkeletonsFlow(main_file = main_file, 

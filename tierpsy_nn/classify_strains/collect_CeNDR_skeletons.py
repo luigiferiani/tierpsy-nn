@@ -19,7 +19,7 @@ from tierpsy_features.smooth import get_group_borders, SmoothedWorm
 
 sys.path.append('/Users/ajaver/Documents/GitHub/process-rig-data/process_files')
 from misc import get_rig_experiments_df
-
+#%%
 def _h_divide_in_sets(strain_groups,
                    test_frac = 0.1,
                    val_frac = 0.1
@@ -44,26 +44,30 @@ def _h_divide_in_sets(strain_groups,
         tot = len(experiments_id)
         
         train_frac = 1-test_frac-val_frac
-        rr = (int(np.ceil(test_frac*tot)),
-              int(np.ceil((test_frac+train_frac)*tot))
-              )
         
+        train_fin = max(int(np.floor(train_frac*tot)), 0)
+        if val_frac > 0:
+            test_fin = max(train_fin + 1, int(np.ceil((test_frac+train_frac)*tot)))
+        else:
+            test_fin = tot
+        
+        rr = (int(train_fin), int(test_fin))
         exp_per_set = dict(
-        test = experiments_id[:rr[0]+1],
-        val = experiments_id[rr[0]:rr[1]+1],
-        train = experiments_id[rr[1]:]
+        train = experiments_id[:rr[0]+1],
+        test = experiments_id[rr[0]:rr[1]+1],
+        val = experiments_id[rr[1]:]
         )
         
         for k, val in exp_per_set.items():
             dd = dat[dat['experiment_id'].isin(exp_per_set[k])].index
-            assert len(dd) > 0
-            indexes_per_set[k].append(dd)
+            if len(dd) > 0:
+                indexes_per_set[k].append(dd)
     
-    indexes_per_set = {k:np.concatenate(val) for k,val in indexes_per_set.items()}
+    indexes_per_set = {k:np.concatenate(val) for k,val in indexes_per_set.items() if len(val) > 0}
     
     return indexes_per_set
-
-def add_sets_index(main_file, val_frac=0.1, test_frac=0.1):
+#%%
+def add_sets_index(main_file, test_frac=0.1, val_frac=0.1):
     #%%
     with pd.HDFStore(main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
@@ -73,7 +77,10 @@ def add_sets_index(main_file, val_frac=0.1, test_frac=0.1):
     strain_groups = skeletons_indexes.groupby('strain_id')
     
     random.seed(777)
-    indexes_per_set = _h_divide_in_sets(strain_groups)
+    indexes_per_set = _h_divide_in_sets(strain_groups, 
+                                        test_frac = test_frac,
+                                        val_frac = val_frac
+                                        )
     
     with tables.File(main_file, 'r+') as fid: 
         if '/index_groups' in fid:
@@ -85,11 +92,8 @@ def add_sets_index(main_file, val_frac=0.1, test_frac=0.1):
             fid.create_carray('/index_groups', 
                           field, 
                           obj = indexes_per_set[field])
-    #%%
-
+#%%
 def _process_file(features_file, fps):
-    #%%
-    
     sample_size_frames = int(round(90*fps))
     gap_to_interp = int(round(gap_to_interp_seconds*fps))
     
@@ -118,7 +122,7 @@ def _process_file(features_file, fps):
         borders = [x for x in borders if x[1]-x[0]-1 >= sample_size_frames]
         
         yield worm_index, worm_data, skeletons, is_bad_skeleton, borders
-
+#%%
 def ini_experiments_df():
     exp_set_dir = '/Volumes/behavgenom_archive$/Avelino/screening/CeNDR'
     csv_dir = os.path.join(exp_set_dir, 'ExtraFiles')
@@ -139,8 +143,18 @@ def ini_experiments_df():
     experiments_df = get_rig_experiments_df(features_files, csv_files)
     experiments_df = experiments_df.sort_values(by='video_timestamp').reset_index()  
     experiments_df['id'] = experiments_df.index
+    
+    experiments_df = experiments_df[['id', 'strain', 'directory', 'base_name', 'exp_name']]
+    experiments_df['fps'] = np.nan
+    print('Reading fps...')
+    for irow, row in experiments_df.iterrows():
+        print(irow+1, len(experiments_df))
+        features_file = os.path.join(row['directory'], row['base_name'] + '_featuresN.hdf5')
+        fps = read_fps(features_file)
+        experiments_df.loc[irow, 'fps'] = fps
+    
     return experiments_df
-
+#%%
 def read_CeNDR_snps():
     fname = '/Users/ajaver/Documents/GitHub/process-rig-data/tests/CeNDR/CeNDR_snps.csv'
 
@@ -167,8 +181,9 @@ def read_CeNDR_snps():
     
     snps_r = snps_c.to_records(index=False).astype(r_dtype)
     return snps_r
-
+#%%
 if __name__ == '__main__':
+    #%%
     save_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed.hdf5'
     
     gap_to_interp_seconds = 3
@@ -180,10 +195,10 @@ if __name__ == '__main__':
         complib='zlib',
         shuffle=True,
         fletcher32=True)
-    experiments_df = ini_experiments_df()
-    experiments_df = experiments_df[['id', 'strain', 'directory', 'base_name', 'exp_name']]
     
-    experiments_df['fps'] = np.nan
+    experiments_df = ini_experiments_df()
+    
+    #%%
     with tables.File(save_file, 'w') as tab_fid:
         r_dtype = []
         for col in experiments_df:
@@ -194,6 +209,17 @@ if __name__ == '__main__':
             else:
                 dt = dat.dtype
             r_dtype.append((col, dt))
+        
+        #save the experiments table. I do it after the loop to store the fps information
+        tab_recarray = experiments_df.to_records(index=False)
+        tab_recarray = tab_recarray.astype(np.dtype(r_dtype))
+        
+        tab_fid.create_table(
+                    '/',
+                    'experiments_data',
+                    obj = tab_recarray,
+                    filters = TABLE_FILTERS
+                    )
         #%%
         table_type = np.dtype([('experiment_id', np.int32),
                                ('worm_index', np.int32),
@@ -233,11 +259,9 @@ if __name__ == '__main__':
             except:
                 continue
             
-            features_file = os.path.join(row['directory'], row['base_name'] + '_featuresN.hdf5')
-            fps = read_fps(features_file)
-            experiments_df.loc[irow, 'fps']
             
-            for output in _process_file(features_file, fps):
+            
+            for output in _process_file(features_file, row['fps']):
                 worm_index, worm_data, skeletons, is_bad_skeleton, borders = output
                 
                 
@@ -249,7 +273,7 @@ if __name__ == '__main__':
                     assert not np.any(np.isnan(skels))
                     is_bad = is_bad_skeleton[bb[0]:bb[1]]
                     
-                    ini_t = worm_data['timestamp'].values[bb[0]]/fps
+                    ini_t = worm_data['timestamp'].values[bb[0]]/row['fps']
                     rr = (row['id'],
                           int(worm_index),
                           np.array(row['strain']),
@@ -273,17 +297,7 @@ if __name__ == '__main__':
            
             print(timer.get_str(irow+1))
             
-        #%%
-        #save the experiments table. I do it after the loop to store the fps information
-        tab_recarray = experiments_df.to_records(index=False)
-        tab_recarray = tab_recarray.astype(np.dtype(r_dtype))
         
-        tab_fid.create_table(
-                    '/',
-                    'experiments_data',
-                    obj = tab_recarray,
-                    filters = TABLE_FILTERS
-                    )
     #%%
     #I am reading the skeletons_group instead of the experiment data, to ignore strains without a valid skeleton
     with pd.HDFStore(save_file, 'r') as fid:
@@ -313,4 +327,4 @@ if __name__ == '__main__':
                     filters = TABLE_FILTERS
                     )
     #%%
-    add_sets_index(save_file, val_frac=0.1, test_frac=0.1)
+    add_sets_index(save_file, val_frac = 0.1, test_frac = 0.1)
