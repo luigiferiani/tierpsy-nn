@@ -51,7 +51,8 @@ class SkeletonsFlow():
                 sample_size_frames_s = 90,
                 sample_frequency_s = 1/10,
                 body_range = (8, 41),
-                is_angle = False
+                is_angle = False,
+                is_QLT = 0
                 ):
         
         self.n_batch = n_batch
@@ -62,15 +63,19 @@ class SkeletonsFlow():
         self.body_range = body_range
         self.is_angle = is_angle
         self.expected_fps = expected_fps
+        self.is_QLT = is_QLT
         
         with pd.HDFStore(self.main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
-            df2 = fid['/strains_codes']
+            
             df3 = fid['/experiments_data']
-        
+            
+            self.strain_codes = fid['/strains_codes']
+            self.strain_codes.index = self.strain_codes['strain_id']
+            
         #number of classes for the one-hot encoding
-        self.n_clases = df2['strain_id'].max() + 1
-        skeletons_indexes = pd.merge(df1, df2, on='strain')
+        self.n_clases = self.strain_codes['strain_id'].max() + 1
+        skeletons_indexes = pd.merge(df1, self.strain_codes, on='strain')
         
         cols_to_use = df3.columns.difference(skeletons_indexes.columns)
         skeletons_indexes = pd.merge(skeletons_indexes, 
@@ -93,6 +98,16 @@ class SkeletonsFlow():
                 valid_indices = fid.get_node('/index_groups/' + set_type)[:]
                 skeletons_indexes = skeletons_indexes.loc[valid_indices]
         
+        
+        if self.is_QLT > 0:
+            with pd.HDFStore(self.main_file, 'r') as fid:
+                self.snps_data = fid['/snps_data']
+            u_strains = skeletons_indexes['strain'].unique()
+            bad_s = [x for x in u_strains if x not in self.snps_data]
+            warnings.warn('The strains following strains are not stored snps_data and will be ignored: {}'.format(bad_s))
+            skeletons_indexes = skeletons_indexes[~skeletons_indexes['strain'].isin(bad_s)]
+            
+            
 
         skeletons_indexes = skeletons_indexes.groupby('strain_id').filter(lambda x: len(x['experiment_id'].unique()) >= min_num_samples)
         if valid_strains is not None:
@@ -102,6 +117,10 @@ class SkeletonsFlow():
         self.skeletons_indexes = skeletons_indexes
         self.skeletons_groups = skeletons_indexes.groupby('strain_id')
         self.strain_ids = list(map(int, self.skeletons_groups.indices.keys()))
+        
+        
+        
+            #%%
         
     def _random_choice(self):
         strain_id, = random.sample(self.strain_ids, 1)
@@ -169,9 +188,18 @@ class SkeletonsFlow():
          else:
             X, _ = _h_angles(skeletons)
             X = X[..., None]
-
-         Y = np.zeros(self.n_clases, np.int32)
-         Y[strain_id] = 1
+         
+         if self.is_QLT == 0:
+             Y = np.zeros(self.n_clases, np.int32)
+             Y[strain_id] = 1
+         else:
+             strain_name = self.strain_codes.loc[strain_id, 'strain']
+             Y = self.snps_data[strain_name].values.astype(np.int32)
+             
+             if self.is_QLT == 1:
+                 Y = np.clip(Y, 0, 1)
+             
+         
          return X,Y
      
     def __next__(self):
@@ -193,7 +221,7 @@ if __name__ == '__main__':
         #main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
         main_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed.hdf5'
 
-    if True:
+    if False:
         #valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
         #     'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
         
@@ -282,11 +310,9 @@ if __name__ == '__main__':
             print(set(wild_isolates_WT2)-set(dd.index))
         
 #    #%%
-#    gen = SkeletonsFlow(main_file = main_file, 
-#                               n_batch = 1, 
-#                               set_type = 'val',
-#                               valid_strains = wild_isolates,
-#                               sample_frequency_s = 1/30,
-#                               sample_size_frames_s = 840
-#                               )
-#    X,Y = next(gen)
+    gen = SkeletonsFlow(main_file = main_file, 
+                               n_batch = 1, 
+                               set_type = 'test',
+                               is_QLT = 2
+                               )
+    X,Y = next(gen)

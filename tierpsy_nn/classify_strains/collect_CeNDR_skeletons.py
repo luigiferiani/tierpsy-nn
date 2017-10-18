@@ -184,7 +184,7 @@ def read_CeNDR_snps():
 #%%
 if __name__ == '__main__':
     #%%
-    save_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed.hdf5'
+    save_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed1.hdf5'
     
     gap_to_interp_seconds = 3
     sample_size_frames_s = 90

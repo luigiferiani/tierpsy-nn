@@ -253,7 +253,11 @@ def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)
     x = Activation('relu')(x)
     return x
 
-def resnet50_model(input_shape, output_shape, dropout_rate=0.0):
+def resnet50_model(input_shape, 
+                   output_shape, 
+                   dropout_rate=0.0,
+                   output_activation = 'softmax'
+                   ):
     if K.image_data_format() == 'channels_last':
         bn_axis = 3
     else:
@@ -288,7 +292,7 @@ def resnet50_model(input_shape, output_shape, dropout_rate=0.0):
     x = AveragePooling2D((7, 2), name='avg_pool')(x)
     #x = Flatten()(x)
     x = GlobalMaxPooling2D()(x)
-    output = Dense(np.prod(output_shape), name='output', activation='softmax')(x)
+    output = Dense(np.prod(output_shape), name='output', activation=output_activation)(x)
     output = Reshape(output_shape)(output)
     
     model = Model(img_input, output, name = 'resnet50_D{}'.format(float(dropout_rate)))
@@ -360,6 +364,6 @@ if __name__ == '__main__':
     input_shape = (900, 49, 2)
     output_shape = (356,)
     
-    main()
-    #mod = resnet50_model(input_shape, output_shape)
+    #main()
+    mod = resnet50_model(input_shape, output_shape, output_activation = 'tanh')
     #mod = larger_model(input_shape, output_shape)

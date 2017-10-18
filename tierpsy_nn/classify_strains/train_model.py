@@ -55,7 +55,8 @@ def main(
     is_angle = False,
     n_batch = None,
     sample_size_frames_s = sample_size_frames_s_dflt,
-    sample_frequency_s = sample_frequency_s_dflt
+    sample_frequency_s = sample_frequency_s_dflt,
+    is_QLT = 0
     ):
 
     # for reproducibility
@@ -92,7 +93,21 @@ def main(
         saving_period = 12
       else:
         saving_period = 3
-
+    
+    loss = 'categorical_crossentropy'
+    metrics = ['categorical_accuracy']
+    
+    if is_QLT == 1:
+        loss = 'binary_crossentropy'
+        metrics = ['binary_crossentropy']
+        output_activation = 'sigmoid'
+        bn_prefix += 'Q1_'
+    elif is_QLT == 2:
+        loss = 'mean_squared_error'
+        metrics = ['mean_squared_error']
+        output_activation = 'tanh'
+        bn_prefix += 'Q2_'
+    
     model = None
     if model_path is not None:
       assert os.path.exists(model_path)
@@ -114,9 +129,16 @@ def main(
           model_fun = resnet50_model
         else:
             dropout_rate = float(model_type.partition('_D')[-1])
-            model_fun = partial(resnet50_model, dropout_rate=dropout_rate)
+            model_fun = partial(resnet50_model, 
+                                dropout_rate=dropout_rate,
+                                output_activation=output_activation)
     else:
         ValueError('Not valid model_type')
+    
+    
+    
+        
+        
     
     if n_batch is None:
       #resnet use more memory i  have to reduce the batch size to fit it in the GPU    
@@ -136,7 +158,8 @@ def main(
                                    sample_size_frames_s = sample_size_frames_s,
                                    sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
-                                   is_angle = is_angle
+                                   is_angle = is_angle,
+                                   is_QLT = is_QLT
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
@@ -144,8 +167,8 @@ def main(
                                    sample_size_frames_s = sample_size_frames_s,
                                    sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
-                                   is_angle = is_angle
-                                   
+                                   is_angle = is_angle,
+                                   is_QLT = is_QLT
                                    )
     
     if model is None:
@@ -178,10 +201,11 @@ def main(
                           mode='auto', 
                           period = saving_period
                           )
-
+    
+    
     model.compile(optimizer = Adam(lr=1e-3), 
-                  loss='categorical_crossentropy',
-                  metrics=['categorical_accuracy'])
+                  loss=loss,
+                  metrics=metrics)
     
     model.fit_generator(train_generator,
                         steps_per_epoch = len(train_generator)/n_batch, 
