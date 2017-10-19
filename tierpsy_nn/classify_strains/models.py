@@ -254,10 +254,14 @@ def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)
     return x
 
 def resnet50_model(input_shape, 
-                   output_shape, 
-                   dropout_rate=0.0,
-                   output_activation = 'softmax'
+                   output_shape = None, 
+                   dropout_rate = 0.0,
+                   output_activation = 'softmax',
+                   is_headless = False
                    ):
+    if not is_headless:
+        assert output_shape is not None
+    
     if K.image_data_format() == 'channels_last':
         bn_axis = 3
     else:
@@ -292,12 +296,32 @@ def resnet50_model(input_shape,
     x = AveragePooling2D((7, 2), name='avg_pool')(x)
     #x = Flatten()(x)
     x = GlobalMaxPooling2D()(x)
-    output = Dense(np.prod(output_shape), name='output', activation=output_activation)(x)
-    output = Reshape(output_shape)(output)
     
-    model = Model(img_input, output, name = 'resnet50_D{}'.format(float(dropout_rate)))
+    
+    mod_name = 'resnet50_D{}'.format(float(dropout_rate))
+    if not is_headless:
+        output = Dense(np.prod(output_shape), name='output', activation=output_activation)(x)
+        output = Reshape(output_shape)(output)
+        
+        model = Model(img_input, output, name = mod_name)
+    else:
+        model = Model(img_input, x, name = mod_name)
     
     return model
+def FChead_resnet50_model(input_shape, 
+               output_shape,
+               output_activation = 'sigmoid',
+               is_headless = False
+               ):
+    mod = resnet50_model(input_shape, is_headless=True)
+    
+    mod_name = 'FChead_' + mod.name
+    x = Dense(8192, activation='elu')(mod.output)
+    output = Dense(np.prod(output_shape), name='output', activation=output_activation)(x)
+    output = Reshape(output_shape)(output)
+    mod_D = Model(mod.input, output, name = mod_name)
+    return mod_D
+
 #%%
 ##%%
 def main():
@@ -365,5 +389,5 @@ if __name__ == '__main__':
     output_shape = (356,)
     
     #main()
-    mod = resnet50_model(input_shape, output_shape, output_activation = 'tanh')
-    #mod = larger_model(input_shape, output_shape)
+    mod = FChead_resnet50_model(input_shape, output_shape)
+    print(mod.summary())

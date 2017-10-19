@@ -52,7 +52,7 @@ class SkeletonsFlow():
                 sample_frequency_s = 1/10,
                 body_range = (8, 41),
                 is_angle = False,
-                is_QLT = 0
+                is_QTL = 0
                 ):
         
         self.n_batch = n_batch
@@ -63,7 +63,7 @@ class SkeletonsFlow():
         self.body_range = body_range
         self.is_angle = is_angle
         self.expected_fps = expected_fps
-        self.is_QLT = is_QLT
+        self.is_QTL = is_QTL
         
         with pd.HDFStore(self.main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
@@ -99,7 +99,7 @@ class SkeletonsFlow():
                 skeletons_indexes = skeletons_indexes.loc[valid_indices]
         
         
-        if self.is_QLT > 0:
+        if self.is_QTL > 0:
             with pd.HDFStore(self.main_file, 'r') as fid:
                 self.snps_data = fid['/snps_data']
             u_strains = skeletons_indexes['strain'].unique()
@@ -189,14 +189,14 @@ class SkeletonsFlow():
             X, _ = _h_angles(skeletons)
             X = X[..., None]
          
-         if self.is_QLT == 0:
+         if self.is_QTL == 0:
              Y = np.zeros(self.n_clases, np.int32)
              Y[strain_id] = 1
          else:
              strain_name = self.strain_codes.loc[strain_id, 'strain']
              Y = self.snps_data[strain_name].values.astype(np.int32)
              
-             if self.is_QLT == 1:
+             if self.is_QTL == 1:
                  Y = np.clip(Y, 0, 1)
              
          
@@ -313,6 +313,6 @@ if __name__ == '__main__':
     gen = SkeletonsFlow(main_file = main_file, 
                                n_batch = 1, 
                                set_type = 'test',
-                               is_QLT = 2
+                               is_QTL = 2
                                )
     X,Y = next(gen)

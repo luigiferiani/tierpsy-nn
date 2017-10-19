@@ -56,12 +56,15 @@ def main(
     n_batch = None,
     sample_size_frames_s = sample_size_frames_s_dflt,
     sample_frequency_s = sample_frequency_s_dflt,
-    is_QLT = 0
+    is_QTL = 0
     ):
 
+    
+    print(is_CeNDR, is_wild_isolates, is_reduced, is_QTL, model_type)
     # for reproducibility
     rand_seed = 1337
     np.random.seed(rand_seed)  
+    output_activation = None
     
     if not is_CeNDR:
         base_file = 'SWDB_skel_smoothed.hdf5'
@@ -85,7 +88,8 @@ def main(
 
     if is_angle:
         bn_prefix += 'ang_'
-
+    
+    
     if saving_period is None:
       #the saving period must be larger in the reduce form since it has 
       #less samples per epoch
@@ -97,12 +101,12 @@ def main(
     loss = 'categorical_crossentropy'
     metrics = ['categorical_accuracy']
     
-    if is_QLT == 1:
+    if is_QTL == 1:
         loss = 'binary_crossentropy'
         metrics = ['binary_crossentropy']
         output_activation = 'sigmoid'
         bn_prefix += 'Q1_'
-    elif is_QLT == 2:
+    elif is_QTL == 2:
         loss = 'mean_squared_error'
         metrics = ['mean_squared_error']
         output_activation = 'tanh'
@@ -124,21 +128,24 @@ def main(
         model_fun = larger_model
         
     elif 'resnet50' in model_type:
-        from models import resnet50_model
-        if not '_D' in model_type:
-          model_fun = resnet50_model
+        if 'FChead' in model_type:
+            from models import FChead_resnet50_model
+            model_fun = FChead_resnet50_model
         else:
-            dropout_rate = float(model_type.partition('_D')[-1])
-            model_fun = partial(resnet50_model, 
-                                dropout_rate=dropout_rate,
-                                output_activation=output_activation)
+            from models import resnet50_model
+            if not '_D' in model_type:
+              model_fun = resnet50_model
+            else:
+                dropout_rate = float(model_type.partition('_D')[-1])
+                model_fun = partial(resnet50_model, dropout_rate=dropout_rate)
+            
+        
     else:
         ValueError('Not valid model_type')
     
-    
-    
-        
-        
+    print(output_activation)
+    if output_activation is not None:
+        model_fun = partial(model_fun, output_activation=output_activation)
     
     if n_batch is None:
       #resnet use more memory i  have to reduce the batch size to fit it in the GPU    
@@ -159,7 +166,7 @@ def main(
                                    sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
                                    is_angle = is_angle,
-                                   is_QLT = is_QLT
+                                   is_QTL = is_QTL
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
@@ -168,7 +175,7 @@ def main(
                                    sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
                                    is_angle = is_angle,
-                                   is_QLT = is_QLT
+                                   is_QTL = is_QTL
                                    )
     
     if model is None:
@@ -183,6 +190,7 @@ def main(
     
 
     print(model.summary())    
+    print(model.get_layer('output').activation)
     print(train_generator.skeletons_indexes['strain'].unique())
     print(train_generator.n_batch)
 
