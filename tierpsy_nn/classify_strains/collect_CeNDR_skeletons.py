@@ -19,12 +19,22 @@ from tierpsy_features.smooth import get_group_borders, SmoothedWorm
 
 sys.path.append('/Users/ajaver/Documents/GitHub/process-rig-data/process_files')
 from misc import get_rig_experiments_df
+
+
+# pytables filters.
+TABLE_FILTERS = tables.Filters(
+    complevel=5,
+    complib='zlib',
+    shuffle=True,
+    fletcher32=True)
 #%%
-def _h_divide_in_sets(strain_groups,
+def _h_divide_in_sets(skeletons_indexes,
                    test_frac = 0.1,
                    val_frac = 0.1
                    ):
     
+    # divide data in subsets for training and testing    
+    strain_groups = skeletons_indexes.groupby('strain_id')
     
     indexes_per_set = dict(
             test = [],
@@ -32,17 +42,19 @@ def _h_divide_in_sets(strain_groups,
             train = []
             )
     
-    
+    all_index = []
+    all_exp_id = []
+    exp_ignored = []
     for strain_id, dat in strain_groups:
         experiments_id = dat['experiment_id'].unique()
+        
         if len(experiments_id)<=2:
+            exp_ignored += list(experiments_id)
             continue
-            
         
         random.shuffle(experiments_id)
         
         tot = len(experiments_id)
-        
         train_frac = 1-test_frac-val_frac
         
         train_fin = max(int(np.floor(train_frac*tot)), 0)
@@ -53,18 +65,33 @@ def _h_divide_in_sets(strain_groups,
         
         rr = (int(train_fin), int(test_fin))
         exp_per_set = dict(
-        train = experiments_id[:rr[0]+1],
-        test = experiments_id[rr[0]:rr[1]+1],
+        train = experiments_id[:rr[0]],
+        test = experiments_id[rr[0]:rr[1]],
         val = experiments_id[rr[1]:]
         )
         
+        
         for k, val in exp_per_set.items():
-            dd = dat[dat['experiment_id'].isin(exp_per_set[k])].index
+            all_exp_id += list(val)
+            
+            dd = dat[dat['experiment_id'].isin(val)].index
             if len(dd) > 0:
                 indexes_per_set[k].append(dd)
+                
+                all_index += list(dd)
+                
+    #all the experiments and indexes selected are unique
+    assert len(set(all_exp_id)) == len(all_exp_id)
+    assert len(set(all_index)) == len(all_index)
+    
+    #all the experiments where selected into a group or ignored
+    assert not (set(skeletons_indexes['experiment_id']) - set(all_exp_id + exp_ignored))
+    
+    #any missed index is in the experiments ignored
+    missed_index = skeletons_indexes.loc[set(skeletons_indexes.index)-set(all_index), 'experiment_id'].unique()
+    assert not (set(missed_index) - set(exp_ignored))
     
     indexes_per_set = {k:np.concatenate(val) for k,val in indexes_per_set.items() if len(val) > 0}
-    
     return indexes_per_set
 #%%
 def add_sets_index(main_file, test_frac=0.1, val_frac=0.1):
@@ -72,15 +99,22 @@ def add_sets_index(main_file, test_frac=0.1, val_frac=0.1):
     with pd.HDFStore(main_file, 'r') as fid:
             df1 = fid['/skeletons_groups']
             df2 = fid['/strains_codes']
-    skeletons_indexes = pd.merge(df1, df2, on='strain')
-    # divide data in subsets for training and testing    
-    strain_groups = skeletons_indexes.groupby('strain_id')
+    #I must call join to be sure the index of skeletons_groups is respected
+    skeletons_indexes = df1.join(df2.set_index('strain'), on='strain')
+    
     
     random.seed(777)
-    indexes_per_set = _h_divide_in_sets(strain_groups, 
+    indexes_per_set = _h_divide_in_sets(skeletons_indexes, 
                                         test_frac = test_frac,
                                         val_frac = val_frac
                                         )
+    #%%
+    #Be sure that the experiments corresponding to each of the indexes do not overlap between groups
+    exp_sets = [set(skeletons_indexes.loc[val, 'experiment_id']) for val in indexes_per_set.values()]
+    for n in range(len(exp_sets) - 1):
+        for m in range(n+1, len(exp_sets)):
+            assert not (exp_sets[n] & exp_sets[m])
+    
     
     with tables.File(main_file, 'r+') as fid: 
         if '/index_groups' in fid:
@@ -93,8 +127,8 @@ def add_sets_index(main_file, test_frac=0.1, val_frac=0.1):
                           field, 
                           obj = indexes_per_set[field])
 #%%
-def _process_file(features_file, fps):
-    sample_size_frames = int(round(90*fps))
+def _process_file(features_file, fps, gap_to_interp_seconds, sample_size_frames_s):
+    sample_size_frames = int(round(sample_size_frames_s*fps))
     gap_to_interp = int(round(gap_to_interp_seconds*fps))
     
     
@@ -182,24 +216,15 @@ def read_CeNDR_snps():
     snps_r = snps_c.to_records(index=False).astype(r_dtype)
     return snps_r
 #%%
-if __name__ == '__main__':
-    #%%
-    save_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed1.hdf5'
+def collect_skeletons(experiments_df, 
+                      main_file,  
+                      file_ext = '_featuresN.hdf5',
+                      gap_to_interp_seconds = 3, 
+                      sample_size_frames_s = 90
+                      ):    
     
-    gap_to_interp_seconds = 3
-    sample_size_frames_s = 90
-    
-    # pytables filters.
-    TABLE_FILTERS = tables.Filters(
-        complevel=5,
-        complib='zlib',
-        shuffle=True,
-        fletcher32=True)
-    
-    experiments_df = ini_experiments_df()
-    
-    #%%
-    with tables.File(save_file, 'w') as tab_fid:
+    assert all(x in experiments_df for x in ('directory', 'base_name', 'fps', 'id', 'strain'))
+    with tables.File(main_file, 'w') as tab_fid:
         r_dtype = []
         for col in experiments_df:
             dat = experiments_df[col]
@@ -220,7 +245,7 @@ if __name__ == '__main__':
                     obj = tab_recarray,
                     filters = TABLE_FILTERS
                     )
-        #%%
+        
         table_type = np.dtype([('experiment_id', np.int32),
                                ('worm_index', np.int32),
                           ('strain', 'S10'),
@@ -253,15 +278,13 @@ if __name__ == '__main__':
         tot_skels = 0
         for irow, row in experiments_df.iterrows():
             try:
-                features_file = os.path.join(row['directory'], row['base_name'] + '_featuresN.hdf5')
+                features_file = os.path.join(row['directory'], row['base_name'] + file_ext)
                 with pd.HDFStore(features_file, 'r') as fid:
-                    timestamp_data = fid['/timeseries_data']
-            except:
+                    assert '/timeseries_data' in fid
+            except AssertionError:
                 continue
             
-            
-            
-            for output in _process_file(features_file, row['fps']):
+            for output in _process_file(features_file, row['fps'], gap_to_interp_seconds, sample_size_frames_s):
                 worm_index, worm_data, skeletons, is_bad_skeleton, borders = output
                 
                 
@@ -292,26 +315,21 @@ if __name__ == '__main__':
                 data_table.flush()
                 skeletons_data.flush()
                 
-                batch_data = []
-            
            
             print(timer.get_str(irow+1))
-            
-        
-    #%%
+    
+    #SAVE STRAIN CODES
     #I am reading the skeletons_group instead of the experiment data, to ignore strains without a valid skeleton
-    with pd.HDFStore(save_file, 'r') as fid:
+    with pd.HDFStore(main_file, 'r') as fid:
         skeletons_groups = fid['/skeletons_groups']
     #get strain data
     ss = skeletons_groups['strain'].unique()
+    n_c = max(len(x) for x in ss)
     strains_dict = {x:ii for ii,x in enumerate(np.sort(ss))}
     strains_codes = np.array(list(strains_dict.items()), 
-                             np.dtype([('strain', 'S7'), ('strain_id', np.int)]))
-    #%%
-    #get snps vector
-    snps = read_CeNDR_snps()
+                             np.dtype([('strain', 'S' + str(n_c)), ('strain_id', np.int)]))
     
-    with tables.File(save_file, 'r+') as fid:
+    with tables.File(main_file, 'r+') as fid:
         if '/strains_codes' in fid:
             fid.remove_node('/strains_codes')
         fid.create_table(
@@ -320,11 +338,31 @@ if __name__ == '__main__':
                     obj = strains_codes,
                     filters = TABLE_FILTERS
                     )
-        fid.create_table(
-                    '/',
-                    'snps_data',
-                    obj = snps,
-                    filters = TABLE_FILTERS
-                    )
+
+#%%
+if __name__ == '__main__':
     #%%
-    add_sets_index(save_file, val_frac = 0.1, test_frac = 0.1)
+    main_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed1.hdf5'
+    
+    experiments_df = ini_experiments_df()
+
+    collect_skeletons(experiments_df, 
+                      main_file,  
+                      file_ext = '_featuresN.hdf5'
+                      )
+            
+    
+    #%%
+    #get snps vector
+    snps = read_CeNDR_snps()
+    with tables.File(main_file, 'r+') as fid:
+        if '/snps_data' in fid:
+            fid.remove_node('/snps_data')
+        fid.create_table(
+            '/',
+            'snps_data',
+            obj = snps,
+            filters = TABLE_FILTERS
+            )
+    #%%
+    add_sets_index(main_file, val_frac = 0.1, test_frac = 0.1)

@@ -66,23 +66,24 @@ class SkeletonsFlow():
         self.is_QTL = is_QTL
         
         with pd.HDFStore(self.main_file, 'r') as fid:
-            df1 = fid['/skeletons_groups']
-            
-            df3 = fid['/experiments_data']
+            skeletons_groups = fid['/skeletons_groups']
+            experiments_data = fid['/experiments_data']
             
             self.strain_codes = fid['/strains_codes']
             self.strain_codes.index = self.strain_codes['strain_id']
-            
+        
         #number of classes for the one-hot encoding
         self.n_clases = self.strain_codes['strain_id'].max() + 1
-        skeletons_indexes = pd.merge(df1, self.strain_codes, on='strain')
         
-        cols_to_use = df3.columns.difference(skeletons_indexes.columns)
-        skeletons_indexes = pd.merge(skeletons_indexes, 
-                                     df3[cols_to_use], 
-                                     left_on='experiment_id', 
-                                     right_on='id'
-                                     )
+        
+        #I must use join to keep the same indexes as skeletons groups 
+        #otherwise the '/index_groups' subdivision will break
+        cols_to_use = experiments_data.columns.difference(skeletons_groups.columns)
+        experiments_data = experiments_data[cols_to_use]
+        experiments_data = experiments_data.rename(columns={'id' : 'experiment_id'})
+        df = skeletons_groups.join(experiments_data.set_index('experiment_id'), on='experiment_id')
+        skeletons_indexes = df.join(self.strain_codes.set_index('strain'), on='strain')
+        
         
         if 'fps' in skeletons_indexes:
             good = skeletons_indexes.apply(lambda x : x['fps']*(x['fin'] - x['ini']) >= self.sample_size_frames_s, axis=1)
@@ -115,8 +116,8 @@ class SkeletonsFlow():
 
         
         self.skeletons_indexes = skeletons_indexes
-        self.skeletons_groups = skeletons_indexes.groupby('strain_id')
-        self.strain_ids = list(map(int, self.skeletons_groups.indices.keys()))
+        self.skel_grouped = skeletons_indexes.groupby('strain_id')
+        self.strain_ids = list(map(int, self.skel_grouped.indices.keys()))
         
         
         
@@ -124,7 +125,7 @@ class SkeletonsFlow():
         
     def _random_choice(self):
         strain_id, = random.sample(self.strain_ids, 1)
-        gg = self.skeletons_groups.get_group(strain_id)
+        gg = self.skel_grouped.get_group(strain_id)
         ind, = random.sample(list(gg.index), 1)
         dat = gg.loc[ind]
         
@@ -139,8 +140,8 @@ class SkeletonsFlow():
         ini_r = random.randint(dat['ini'], r_f)
         
         #get the expected row indexes
-        row_indices = np.linspace(0, self.sample_size_frames_s, self.n_samples)
-        row_indices = row_indices*fps + ini_r
+        row_indices = np.linspace(0, self.sample_size_frames_s, self.n_samples)*fps
+        row_indices = row_indices + ini_r
         row_indices = np.round(row_indices).astype(np.int32)
         
         while True:
@@ -218,10 +219,10 @@ if __name__ == '__main__':
         #main_file = '/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5'
     else:        
         log_dir_root = '/Users/ajaver/OneDrive - Imperial College London/classify_strains'
-        #main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
-        main_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed.hdf5'
+        main_file = '/Users/ajaver/Desktop/SWDB_skel_smoothed.hdf5'
+        #main_file = '/Users/ajaver/Desktop/CeNDR_skel_smoothed.hdf5'
 
-    if False:
+    if True:
         #valid_strains = ['AQ1033', 'AQ1037', 'AQ1038', 'CB1069', 'CB5', 'ED3054', 'JU438',
         #     'MT2248', 'MT8504', 'N2', 'NL1137', 'RB2005', 'RB557', 'VC12']
         
@@ -245,6 +246,16 @@ if __name__ == '__main__':
                                        set_type='test',
                                        valid_strains = valid_strains
                                        )
+        
+        
+        #there must not be an intesect between any of the groups
+        train_s = set(train_generator.skeletons_indexes['base_name'])
+        test_s = set(test_generator.skeletons_indexes['base_name'])
+        val_s = set(val_generator.skeletons_indexes['base_name'])
+        assert not (train_s & test_s)
+        assert not (train_s & val_s)
+        assert not (val_s & test_s)
+        
         
         #%%
         with pd.HDFStore(train_generator.main_file, 'r') as fid:

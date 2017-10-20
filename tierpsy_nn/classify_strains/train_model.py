@@ -60,7 +60,6 @@ def main(
     ):
 
     
-    print(is_CeNDR, is_wild_isolates, is_reduced, is_QTL, model_type)
     # for reproducibility
     rand_seed = 1337
     np.random.seed(rand_seed)  
