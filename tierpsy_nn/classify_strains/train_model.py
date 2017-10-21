@@ -44,6 +44,24 @@ def _h_get_paths(base_file):
 sample_size_frames_s_dflt = 90.
 sample_frequency_s_dflt = 1/10
 
+def get_valid_strains(is_reduced, is_wild_isolates, is_CeNDR):
+  if is_reduced:
+    bn_prefix = 'R_'
+    if is_CeNDR:
+        valid_strains = CeNDR_base_strains
+    else:
+        valid_strains = reduced_strains
+  elif is_wild_isolates:
+    bn_prefix = 'W_'
+    valid_strains = wild_isolates_WT2 
+  else:
+    bn_prefix = ''
+    valid_strains = None
+  print(valid_strains)
+
+  return valid_strains, bn_prefix
+
+
 def main(
     epochs = 5000,
     model_type = 'simple',
@@ -65,30 +83,18 @@ def main(
     np.random.seed(rand_seed)  
     output_activation = None
     
-    if is_reduced:
-      bn_prefix = 'R_'
-      if is_CeNDR:
-          valid_strains = CeNDR_base_strains
-      else:
-          valid_strains = reduced_strains
-    elif is_wild_isolates:
-      bn_prefix = 'W_'
-      valid_strains = wild_isolates_WT2 
-    else:
-      bn_prefix = ''
-      valid_strains = None
-    print(valid_strains)
+    valid_strains, bn_prefix = get_valid_strains(is_reduced, is_wild_isolates, is_CeNDR)
 
     if is_angle:
         bn_prefix += 'ang_'
     
     if not is_CeNDR:
         base_file = 'SWDB_skel_smoothed.hdf5'
-        bn_prefix = 'CeNDR_' + bn_prefix
+        bn_prefix = 'SWDB_' + bn_prefix
     else:
         base_file = 'CeNDR_skel_smoothed.hdf5'
-        bn_prefix = 'SWDB_' + bn_prefix
-        
+        bn_prefix = 'CeNDR_' + bn_prefix
+
     log_dir_root, main_file = _h_get_paths(base_file)
     
     
@@ -225,6 +231,7 @@ def main(
                         verbose = 1,
                         callbacks=[tb, mcp]
                         )
-import fire
+    
 if __name__ == '__main__':
-    fire.Fire(main)
+  import fire
+  fire.Fire(main)

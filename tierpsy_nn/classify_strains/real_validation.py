@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 from collections import Counter
 
 from skeletons_flow import SkeletonsFlow, _h_angles
-from train_model import _h_get_paths, reduced_strains, wild_isolates_old, CeNDR_base_strains, wild_isolates_WT2
+from train_model import _h_get_paths, get_valid_strains
 
 #%%
 def plot_confusion_matrix(cm, classes,
@@ -53,52 +53,32 @@ def plot_confusion_matrix(cm, classes,
     #plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-#%%
-if __name__ == '__main__':
-    
-#    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/W_resnet50_D0.0_20170928_112527/W_resnet50_D0.0-0233-1.6491.h5'
-#    valid_strains = wild_isolates_old
-#    sample_size_frames_s = 90
-#    sample_frequency_s = 1/10.
-#    is_angle = False
-    
-#    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/resnet50_20170925_225727/resnet50-0077-4.1958.h5'
-#    valid_strains = None
-#    sample_size_frames_s = 90
-#    sample_frequency_s = 1/10.
-#    is_angle = False
-    
-#    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/logs_sever/logs/W_ang_resnet50_D0.0_20171005_120834/W_ang_resnet50_D0.0-0311-1.6940.h5'
-#    valid_strains = wild_isolates_old
-#    sample_size_frames_s = 90
-#    sample_frequency_s = 1/10.
-#    is_angle = True
-    
-    model_path = '/work/ajaver/classify_strains/results/logsN/S90_F0.1_R_ang_resnet50_D0.0_20171020_183211/S90_F0.1_R_ang_resnet50_D0.0-0279-1.3302.h5'
-    valid_strains = CeNDR_base_strains
-    is_angle = True
-    is_CeNDR = True
 
-    # model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/CeNDR/logsN/S90_F0.1_ang_resnet50_D0.0_20171018_191655/S90_F0.1_ang_resnet50_D0.0-0099-2.8045.h5'
-    # valid_strains = None
-    # is_angle = True
-    # is_CeNDR = True
-
+def main(
+    model_path,
+    is_reduced = False,
+    is_wild_isolates = False,
+    is_CeNDR = False,
+    is_angle = False,
+    set_type = 'test'
+    ):
+    
     if not is_CeNDR:
         base_file = 'SWDB_skel_smoothed.hdf5'
     else:
         base_file = 'CeNDR_skel_smoothed.hdf5'
     log_dir_root, main_file = _h_get_paths(base_file)
     
+    valid_strains, _ = get_valid_strains(is_reduced, is_wild_isolates, is_CeNDR)
+
     
     print('loading model...')
     model = load_model(model_path)
      
-    print('loading data...')
-    
+    print('loading data...')    
     gen = SkeletonsFlow(main_file = main_file, 
                        n_batch = 32, 
-                       set_type='test',
+                       set_type = set_type,
                        valid_strains = valid_strains,
                        is_angle = is_angle
                        )
@@ -147,9 +127,9 @@ if __name__ == '__main__':
         Y = model.predict(batch_data)
         
         all_results.append((row, Y))
-    #%%
     with pd.HDFStore(gen.main_file, 'r') as fid:
         strains_codes = fid['/strains_codes']
+    
     #%%
     y_vec_dict = {}
     for row, y_l in all_results:
@@ -171,8 +151,7 @@ if __name__ == '__main__':
         for s, p in zip(s_sort, prob[ind]):
             print('{} - {:.2f}'.format(s,p*100))
         print('*************')
-        
-        
+      
     #%%
     y_pred_dict = {}
     for row, y_l in all_results:
@@ -229,11 +208,7 @@ if __name__ == '__main__':
                           normalize = True
                           )
     plt.title('Confusion matrix by Video')
-    #%%
-#    for rr, pp in zip(y_real, y_pred_dict):
-#        dd = sorted(pp.items(), key = lambda x : x[1])[::-1]
-#        
-#        print('*** {} ***'.format(rr))
-#        for k,v in dd:
-#            print('{} : {:.1f}'.format(k, v*100))
-        
+
+if __name__ == '__main__':
+  import fire
+  fire.Fire(main)
