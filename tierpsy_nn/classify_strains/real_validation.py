@@ -172,9 +172,6 @@ if __name__ == '__main__':
         
         
     #%%
-    
-    
-    
     y_pred_dict = {}
     for row, y_l in all_results:
         yys = np.argmax(y_l, axis=1)
@@ -205,21 +202,21 @@ if __name__ == '__main__':
     labels = sorted(list(set(y_true)))
     dd = sum(x[0] == x[1] for x in chuck_p)
     print('Accuracy by chunk: {}'.format(dd/len(chuck_p)))
+    
     #%%
+    dd = sum(x[0] == x[1] for x in zip(y_pred, y_true))
+    print('Accuracy by video: {}'.format(dd/len(y_true)))
     
-    
-    cm_c = confusion_matrix(*zip(*chuck_p), labels=labels)
+    #%%
+    cm_c_chunk = confusion_matrix(*zip(*chuck_p), labels=labels)
     plt.figure(figsize=(21,21))
-    plot_confusion_matrix(cm_c, 
+    plot_confusion_matrix(cm_c_chunk, 
                           labels,
                           title='Confusion matrix',
                           cmap=plt.cm.Blues,
                           normalize = True
                           )
-    
-    #%%
-    dd = sum(x[0] == x[1] for x in zip(y_pred, y_true))
-    print('Accuracy by video: {}'.format(dd/len(y_true)))
+    plt.title('Confusion matrix by Chunk')
     #%%
     cm = confusion_matrix(y_true, y_pred, labels=labels)
     plt.figure(figsize=(21,21))
@@ -229,7 +226,7 @@ if __name__ == '__main__':
                           cmap=plt.cm.Blues,
                           normalize = True
                           )
-    
+    plt.title('Confusion matrix by Video')
     #%%
 #    for rr, pp in zip(y_real, y_pred_dict):
 #        dd = sorted(pp.items(), key = lambda x : x[1])[::-1]

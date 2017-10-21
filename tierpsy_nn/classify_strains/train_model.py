@@ -65,12 +65,6 @@ def main(
     np.random.seed(rand_seed)  
     output_activation = None
     
-    if not is_CeNDR:
-        base_file = 'SWDB_skel_smoothed.hdf5'
-    else:
-        base_file = 'CeNDR_skel_smoothed.hdf5'
-    log_dir_root, main_file = _h_get_paths(base_file)
-    
     if is_reduced:
       bn_prefix = 'R_'
       if is_CeNDR:
@@ -87,6 +81,15 @@ def main(
 
     if is_angle:
         bn_prefix += 'ang_'
+    
+    if not is_CeNDR:
+        base_file = 'SWDB_skel_smoothed.hdf5'
+        bn_prefix = 'CeNDR_' + bn_prefix
+    else:
+        base_file = 'CeNDR_skel_smoothed.hdf5'
+        bn_prefix = 'SWDB_' + bn_prefix
+        
+    log_dir_root, main_file = _h_get_paths(base_file)
     
     
     if saving_period is None:
