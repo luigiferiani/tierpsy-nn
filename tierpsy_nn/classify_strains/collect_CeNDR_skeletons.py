@@ -17,10 +17,6 @@ from tierpsy.helper.params import read_fps
 from tierpsy.helper.misc import TimeCounter
 from tierpsy_features.smooth import get_group_borders, SmoothedWorm
 
-sys.path.append('/Users/ajaver/Documents/GitHub/process-rig-data/process_files')
-from misc import get_rig_experiments_df
-
-
 # pytables filters.
 TABLE_FILTERS = tables.Filters(
     complevel=5,
@@ -158,6 +154,10 @@ def _process_file(features_file, fps, gap_to_interp_seconds, sample_size_frames_
         yield worm_index, worm_data, skeletons, is_bad_skeleton, borders
 #%%
 def ini_experiments_df():
+
+    sys.path.append('/Users/ajaver/Documents/GitHub/process-rig-data/process_files')
+    from misc import get_rig_experiments_df
+
     exp_set_dir = '/Volumes/behavgenom_archive$/Avelino/screening/CeNDR'
     csv_dir = os.path.join(exp_set_dir, 'ExtraFiles')
     feats_dir = os.path.join(exp_set_dir, 'Results')
@@ -236,7 +236,7 @@ def collect_skeletons(experiments_df,
             r_dtype.append((col, dt))
         
         #save the experiments table. I do it after the loop to store the fps information
-        tab_recarray = experiments_df.to_records(index=False)
+            
         tab_recarray = tab_recarray.astype(np.dtype(r_dtype))
         
         tab_fid.create_table(

@@ -74,15 +74,15 @@ if __name__ == '__main__':
 #    sample_frequency_s = 1/10.
 #    is_angle = True
     
-#    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/CeNDR/logsN/S90_F0.1_R_ang_resnet50_D0.0_20171018_212909/S90_F0.1_R_ang_resnet50_D0.0-0259-1.8894.h5'
-#    valid_strains = CeNDR_base_strains
-#    is_angle = True
-#    is_CeNDR = True
-
-    model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/CeNDR/logsN/S90_F0.1_ang_resnet50_D0.0_20171018_191655/S90_F0.1_ang_resnet50_D0.0-0099-2.8045.h5'
-    valid_strains = None
+    model_path = '/work/ajaver/classify_strains/results/logsN/S90_F0.1_R_ang_resnet50_D0.0_20171020_183211/S90_F0.1_R_ang_resnet50_D0.0-0279-1.3302.h5'
+    valid_strains = CeNDR_base_strains
     is_angle = True
     is_CeNDR = True
+
+    # model_path = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/CeNDR/logsN/S90_F0.1_ang_resnet50_D0.0_20171018_191655/S90_F0.1_ang_resnet50_D0.0-0099-2.8045.h5'
+    # valid_strains = None
+    # is_angle = True
+    # is_CeNDR = True
 
     if not is_CeNDR:
         base_file = 'SWDB_skel_smoothed.hdf5'
@@ -102,8 +102,10 @@ if __name__ == '__main__':
                        valid_strains = valid_strains,
                        is_angle = is_angle
                        )
+
+
     expected_fps = 30
-    #%%
+    
     all_results = []
     for ii, (irow, row) in enumerate(gen.skeletons_indexes.iterrows()):
         print(ii+1, len(gen.skeletons_indexes))
