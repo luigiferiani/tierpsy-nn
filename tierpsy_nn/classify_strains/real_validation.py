@@ -5,11 +5,14 @@ Created on Thu Oct  5 15:15:26 2017
 
 @author: ajaver
 """
-import tables
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pylab as plt
+
 import numpy as np
 import pandas as pd
+import tables
+import os
 from keras.models import load_model
-import matplotlib.pylab as plt
 import itertools
 
 from sklearn.metrics import confusion_matrix
@@ -53,16 +56,13 @@ def plot_confusion_matrix(cm, classes,
     #plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-
-def main(
-    model_path,
-    is_reduced = False,
-    is_wild_isolates = False,
-    is_CeNDR = False,
-    is_angle = False,
-    set_type = 'test'
-    ):
-    
+#%%
+def _h_get_model_results(model_path,
+                    is_reduced = False,
+                    is_wild_isolates = False,
+                    is_CeNDR = False,
+                    is_angle = False,
+                    set_type = 'test'):
     if not is_CeNDR:
         base_file = 'SWDB_skel_smoothed.hdf5'
     else:
@@ -127,9 +127,38 @@ def main(
         Y = model.predict(batch_data)
         
         all_results.append((row, Y))
+    
+
     with pd.HDFStore(gen.main_file, 'r') as fid:
         strains_codes = fid['/strains_codes']
+
+    return all_results, strains_codes
+#%%
+def main(
+    model_path,
+    is_reduced = False,
+    is_wild_isolates = False,
+    is_CeNDR = False,
+    is_angle = False,
+    set_type = 'test'
+    ):
+
+#if __name__ == '__main__':
+#    model_path = '/Users/ajaver/Desktop/S90_F0.1_CeNDR_R_ang_resnet50_D0.0-0379-2.3040.h5'
+#    is_reduced = True
+#    is_wild_isolates = False
+#    is_CeNDR = True
+#    is_angle = True
+#    set_type = 'test'
     
+    all_results,  strains_codes = _h_get_model_results(model_path,
+                                                is_reduced = is_reduced,
+                                                is_wild_isolates = is_wild_isolates,
+                                                is_CeNDR = is_CeNDR,
+                                                is_angle = is_angle,
+                                                set_type = set_type)
+
+                               
     #%%
     y_vec_dict = {}
     for row, y_l in all_results:
@@ -151,7 +180,6 @@ def main(
         for s, p in zip(s_sort, prob[ind]):
             print('{} - {:.2f}'.format(s,p*100))
         print('*************')
-      
     #%%
     y_pred_dict = {}
     for row, y_l in all_results:
@@ -162,6 +190,21 @@ def main(
             y_pred_dict[exp_id]  = []
         
         y_pred_dict[exp_id] += list(yys)
+    #%%
+    #%% #collect sorted predictions
+    y_pred_all = {}
+    for row, y_l in all_results:
+        yys = np.argsort(y_l, axis=1)
+        
+        exp_id = row['experiment_id']
+        if not exp_id in y_pred_all:
+            y_pred_all[exp_id]  = []
+        
+        y_pred_all[exp_id] += [np.argsort(y_l)[:, ::-1]]
+    
+    for k, v in y_pred_all.items():
+        y_pred_all[k] = np.vstack(v)
+    
     
     #%%
     df, _ = zip(*all_results)
@@ -188,26 +231,33 @@ def main(
     dd = sum(x[0] == x[1] for x in zip(y_pred, y_true))
     print('Accuracy by video: {}'.format(dd/len(y_true)))
     
+    
     #%%
-    cm_c_chunk = confusion_matrix(*zip(*chuck_p), labels=labels)
-    plt.figure(figsize=(21,21))
-    plot_confusion_matrix(cm_c_chunk, 
-                          labels,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues,
-                          normalize = True
-                          )
-    plt.title('Confusion matrix by Chunk')
-    #%%
-    cm = confusion_matrix(y_true, y_pred, labels=labels)
-    plt.figure(figsize=(21,21))
-    plot_confusion_matrix(cm, 
-                          labels,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues,
-                          normalize = True
-                          )
-    plt.title('Confusion matrix by Video')
+    save_name = os.path.splitext(model_path)[0]
+    save_name += '_cm.pdf'
+    
+    with PdfPages(save_name) as pdf:
+        cm_c_chunk = confusion_matrix(*zip(*chuck_p), labels=labels)
+        plt.figure(figsize=(21,21))
+        plot_confusion_matrix(cm_c_chunk, 
+                              labels,
+                              title='Confusion matrix',
+                              cmap=plt.cm.Blues,
+                              normalize = True
+                              )
+        plt.title('Confusion matrix by Chunk')
+        pdf.savefig()
+        
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
+        plt.figure(figsize=(21,21))
+        plot_confusion_matrix(cm, 
+                              labels,
+                              title='Confusion matrix',
+                              cmap=plt.cm.Blues,
+                              normalize = True
+                              )
+        plt.title('Confusion matrix by Video')
+        pdf.savefig()
 
 if __name__ == '__main__':
   import fire
