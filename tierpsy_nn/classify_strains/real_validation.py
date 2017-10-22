@@ -5,8 +5,13 @@ Created on Thu Oct  5 15:15:26 2017
 
 @author: ajaver
 """
-from matplotlib.backends.backend_pdf import PdfPages
+import sys
+if sys.platform == 'linux':
+    import matplotlib
+    matplotlib.use('Agg')
+
 import matplotlib.pylab as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 import numpy as np
 import pandas as pd
