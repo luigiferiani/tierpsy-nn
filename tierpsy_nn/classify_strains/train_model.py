@@ -178,7 +178,7 @@ def main(
                                    )
     val_generator = SkeletonsFlow(main_file = main_file, 
                                    n_batch = n_batch, 
-                                   set_type='val',
+                                   set_type='test',
                                    sample_size_frames_s = sample_size_frames_s,
                                    sample_frequency_s = sample_frequency_s,
                                    valid_strains = valid_strains,
