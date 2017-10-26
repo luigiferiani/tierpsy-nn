@@ -252,7 +252,7 @@ def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)
     x = layers.add([x, shortcut])
     x = Activation('relu')(x)
     return x
-
+#%%
 def resnet50_model(input_shape, 
                    output_shape = None, 
                    dropout_rate = 0.0,

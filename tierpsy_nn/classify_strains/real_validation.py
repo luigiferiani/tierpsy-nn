@@ -61,21 +61,13 @@ def plot_confusion_matrix(cm, classes,
     #plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-#%%
+
 def _h_get_model_results(model_path,
                     is_reduced = False,
                     is_wild_isolates = False,
                     is_CeNDR = False,
                     is_angle = False,
                     set_type = 'test'):
-    if not is_CeNDR:
-        base_file = 'SWDB_skel_smoothed.hdf5'
-    else:
-        base_file = 'CeNDR_skel_smoothed.hdf5'
-    log_dir_root, main_file = _h_get_paths(base_file)
-    
-    valid_strains, _ = get_valid_strains(is_reduced, is_wild_isolates, is_CeNDR)
-
     
     print('loading model...')
     model = load_model(model_path)
@@ -138,33 +130,36 @@ def _h_get_model_results(model_path,
         strains_codes = fid['/strains_codes']
 
     return all_results, strains_codes
-#%%
+
 def main(
     model_path,
+    data_file = '',
     is_reduced = False,
     is_wild_isolates = False,
     is_CeNDR = False,
     is_angle = False,
     set_type = 'test'
     ):
-
-#if __name__ == '__main__':
-#    model_path = '/Users/ajaver/Desktop/S90_F0.1_CeNDR_R_ang_resnet50_D0.0-0379-2.3040.h5'
-#    is_reduced = True
-#    is_wild_isolates = False
-#    is_CeNDR = True
-#    is_angle = True
-#    set_type = 'test'
     
+    
+    if not os.path.exists(data_file):
+        if not is_CeNDR:
+            data_file_prefix = 'SWDB_skel_smoothed.hdf5'
+        else:
+            data_file_prefix = 'CeNDR_skel_smoothed.hdf5'
+        _, data_file = _h_get_paths(data_file)
+
+    assert os.path.exists(data_file)
+    
+    valid_strains, _ = get_valid_strains(is_reduced, is_wild_isolates, is_CeNDR)
+
     all_results,  strains_codes = _h_get_model_results(model_path,
-                                                is_reduced = is_reduced,
-                                                is_wild_isolates = is_wild_isolates,
-                                                is_CeNDR = is_CeNDR,
+                                                data_file = data_file,
+                                                valid_strains = valid_strains,
                                                 is_angle = is_angle,
                                                 set_type = set_type)
 
-                               
-    #%%
+    # group results for all the strains
     y_vec_dict = {}
     for row, y_l in all_results:
         strain_id = row['strain']
@@ -175,7 +170,7 @@ def main(
         else:
              y_vec_dict[strain_id] += y
     
-    #%%
+    # print the top 5 predictions per strain
     for strain, vec in y_vec_dict.items():
         prob = vec/np.sum(vec)
         ind = np.argsort(prob)[:-6:-1]
@@ -185,7 +180,8 @@ def main(
         for s, p in zip(s_sort, prob[ind]):
             print('{} - {:.2f}'.format(s,p*100))
         print('*************')
-    #%%
+    
+    # collect the best results per experiment/video
     y_pred_dict = {}
     for row, y_l in all_results:
         yys = np.argmax(y_l, axis=1)
@@ -195,23 +191,23 @@ def main(
             y_pred_dict[exp_id]  = []
         
         y_pred_dict[exp_id] += list(yys)
-    #%%
-    #%% #collect sorted predictions
-    y_pred_all = {}
-    for row, y_l in all_results:
-        yys = np.argsort(y_l, axis=1)
+    
+    # #%% #collect sorted predictions
+    # y_pred_all = {}
+    # for row, y_l in all_results:
+    #     yys = np.argsort(y_l, axis=1)
         
-        exp_id = row['experiment_id']
-        if not exp_id in y_pred_all:
-            y_pred_all[exp_id]  = []
+    #     exp_id = row['experiment_id']
+    #     if not exp_id in y_pred_all:
+    #         y_pred_all[exp_id]  = []
         
-        y_pred_all[exp_id] += [np.argsort(y_l)[:, ::-1]]
+    #     y_pred_all[exp_id] += [np.argsort(y_l)[:, ::-1]]
     
-    for k, v in y_pred_all.items():
-        y_pred_all[k] = np.vstack(v)
+    # for k, v in y_pred_all.items():
+    #     y_pred_all[k] = np.vstack(v)
     
     
-    #%%
+    # get the accuracy percentage per chunk
     df, _ = zip(*all_results)
     df = pd.concat(df, axis=1).T
     
@@ -227,17 +223,17 @@ def main(
         y_pred.append(strains_codes.loc[dd]['strain']) 
         
         chuck_p += [(row['strain'], x) for x in strains_codes.loc[y_l]['strain'].values]
-    #%%
+    
+    #print results
     labels = sorted(list(set(y_true)))
     dd = sum(x[0] == x[1] for x in chuck_p)
     print('Accuracy by chunk: {}'.format(dd/len(chuck_p)))
     
-    #%%
     dd = sum(x[0] == x[1] for x in zip(y_pred, y_true))
     print('Accuracy by video: {}'.format(dd/len(y_true)))
     
     
-    #%%
+    # print the confusion matrix per chuck and video
     save_name = os.path.splitext(model_path)[0]
     save_name += '_cm.pdf'
     

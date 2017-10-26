@@ -12,6 +12,7 @@ import random
 import time
 import warnings
 
+#wild isolates used to test SWDB
 wild_isolates_WT2 = ['JU393', 'ED3054', 'JU394', 
                  'N2', 'JU440', 'ED3021', 'ED3017', 
                  'JU438', 'JU298', 'JU345', 'RC301', 
@@ -20,6 +21,7 @@ wild_isolates_WT2 = ['JU393', 'ED3054', 'JU394',
                  'CB4852', 'CB4856', 'CB4853',
                  ]
 
+#divergent set used for CeNDR
 CeNDR_base_strains = ['N2', 'ED3017', 'CX11314', 'LKC34', 'MY16', 'DL238', 'JT11398', 'JU775',
        'JU258', 'MY23', 'EG4725', 'CB4856']
 
@@ -36,9 +38,6 @@ def _h_angles(skeletons):
     
     return angles, mean_angles
 
-
-
-    #%%
 
 class SkeletonsFlow():
     def __init__(self,
@@ -65,6 +64,7 @@ class SkeletonsFlow():
         self.expected_fps = expected_fps
         self.is_QTL = is_QTL
         
+
         with pd.HDFStore(self.main_file, 'r') as fid:
             skeletons_groups = fid['/skeletons_groups']
             experiments_data = fid['/experiments_data']
@@ -74,7 +74,6 @@ class SkeletonsFlow():
         
         #number of classes for the one-hot encoding
         self.n_clases = self.strain_codes['strain_id'].max() + 1
-        
         
         #I must use join to keep the same indexes as skeletons groups 
         #otherwise the '/index_groups' subdivision will break
@@ -119,9 +118,6 @@ class SkeletonsFlow():
         self.skel_grouped = skeletons_indexes.groupby('strain_id')
         self.strain_ids = list(map(int, self.skel_grouped.indices.keys()))
         
-        
-        
-            #%%
         
     def _random_choice(self):
         strain_id, = random.sample(self.strain_ids, 1)
@@ -321,8 +317,7 @@ if __name__ == '__main__':
             dd = gen.skeletons_indexes['strain'].value_counts()
             print(dd)
             print(set(wild_isolates_WT2)-set(dd.index))
-        
-#    #%%
+    
     gen = SkeletonsFlow(main_file = main_file, 
                                n_batch = 1, 
                                set_type = 'test',
