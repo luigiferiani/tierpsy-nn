@@ -197,7 +197,7 @@ def main(
       pass
     
 
-    print(model.summary())    
+    print(model.summary())  
     print(model.get_layer('output').activation)
     print(train_generator.skeletons_indexes['strain'].unique())
     print(train_generator.n_batch)
