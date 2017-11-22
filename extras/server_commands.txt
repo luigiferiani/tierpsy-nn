@@ -9,7 +9,7 @@ tensorboard --logdir=$WORK/egg_counter/results/logs/ --port=7007
 tensorboard --logdir=$WORK/classify_strains/results/ --port=7007
 
 
-scp "/Users/ajaver/OneDrive - Imperial College London/classify_strains/train_data/SWDB/SWDB_skel_smoothed.hdf5" ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/train_set/SWDB_skel_smoothed.hdf5
+scp /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/train_data/CeNDR/CeNDR_skel_smoothed.hdf5 ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/train_set_new/
 
 rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/logsN /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/CeNDR
 
