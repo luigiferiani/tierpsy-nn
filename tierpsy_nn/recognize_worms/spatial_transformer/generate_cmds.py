@@ -7,7 +7,7 @@ Created on Wed Nov  1 14:00:41 2017
 """
 import os
 from collections import OrderedDict
-from itertools import product
+
 
 base_file = '''
 #!/bin/sh

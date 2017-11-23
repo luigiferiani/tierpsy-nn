@@ -167,4 +167,4 @@ def main(model_name = 'Simple',
          is_cuda)
 
 if __name__ == '__main__':
-    main(model_name = 'STN')
+    main()
