@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score
 import numpy as np
 from collections import OrderedDict
 
-def metrics_avg(self, m):
+def metrics_avg(m):
     dd = [list(zip(*x)) for x in zip(*m)]
     return OrderedDict([(x[0][0], np.mean(x[1])) for x in dd])
 

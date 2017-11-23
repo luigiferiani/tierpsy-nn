@@ -11,7 +11,7 @@ tensorboard --logdir=$WORK/classify_strains/results/ --port=7007
 
 scp /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/train_data/CeNDR/CeNDR_skel_smoothed.hdf5 ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/train_set_new/
 
-rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/logsN /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/CeNDR
+rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/ /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/logs
 
 scp ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/food/results/logs/unet_norm_bn_20170709_123247/unet_norm_bn-08249-0.0071.h5 /Users/ajaver/Documents/GitHub/work-in-progress/nn_tests/find_food
 
