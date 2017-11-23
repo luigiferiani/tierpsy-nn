@@ -73,7 +73,7 @@ def test_epoch(epoch, is_cuda, model, test_loader, criterion, optimizer):
     all_metrics = []
     for input_var, target_var in pbar:
         #I do not need gradients here
-        input_var, target_var = Variable(input_var, volatile=True), Variable(target_var)
+        input_var, target_var = Variable(input_var, volatile=True), Variable(target_var.squeeze())
         if is_cuda:
             input_var =  input_var.cuda()
             target_var = target_var.cuda()
