@@ -15,7 +15,7 @@ from tierpsy.gui.TrackerViewerAux import TrackerViewerAuxGUI
 from tierpsy.gui.HDF5VideoPlayer import LineEditDragDrop, setChildrenFocusPolicy
 
 
-FILE_NAME = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samplesI.hdf5'
+FILE_NAME = '/Users/ajaver/OneDrive - Imperial College London/recognize_worms/worm_ROI_samplesI.hdf5'
 
 class d_Ui_image_labeler(Ui_image_labeler):
 	def __init__(self):

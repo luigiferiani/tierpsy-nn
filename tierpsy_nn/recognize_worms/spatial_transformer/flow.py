@@ -10,12 +10,13 @@ import pandas as pd
 import random
 import math
 import tables
-import matplotlib.pylab as plt
 import numpy as np
 from skimage.transform import rescale, rotate
 
 import torch
-from torch.autograd import Variable
+
+
+from torch.utils.data import Dataset, DataLoader
 
 def random_zoom_out(img, zoom_out = 1.25):
     scale = random.uniform(1, zoom_out)
@@ -44,19 +45,25 @@ def random_v_flip(img):
     if random.random() < 0.5:
         img = img[:, ::-1] 
     return img
- 
 
-
-class LabelFlows():
-    samples_file = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samplesI.hdf5'
+class LabelFlow(Dataset):
     labels = {1:'BAD', 2:'WORM', 3:'DIFICULT_WORM', 4:'WORM_AGGREGATE', 5:'EGGS', 6:'LARVAE'}
     mode = ''
     transform_funcs = [random_zoom_out, random_rotation, random_h_flip, random_v_flip]
-    
-    def __init__(self, is_gpu=False, frac_test=0.9):
-        self.is_gpu = is_gpu
-        self.train()
-        with pd.HDFStore(self.samples_file) as fid:
+
+    def __init__(self, 
+                 samples_file,
+                 mode, 
+                 is_shuffle = False,
+                 is_cuda=False, 
+                 frac_test=0.1):
+        
+        super().__init__()
+        self.is_cuda = is_cuda
+        self.is_shuffle = is_shuffle
+        self.samples_file = samples_file
+        
+        with pd.HDFStore(self.samples_file, 'r') as fid:
             sample_data = fid['/sample_data']
             sample_data = sample_data[sample_data['label_id']>= 1] 
             
@@ -65,120 +72,164 @@ class LabelFlows():
         self.full_img = self.masks_fid.get_node('/full_data')
         
         self.sample_data = sample_data
-        self._split_indexes(frac_test)
+        self.mode = mode
+
+
+        self._split_indexes(frac_test)        
         
-    
     def _split_indexes(self, frac_test):
+        random.seed(777) #to be sure we are making always the same subdivisions
         group_by_label = self.sample_data.groupby('label_id')
-        
-        set_index = {'train':{}, 'test':{}}
+        mode_index = {'train':{}, 'test':{}, 'tiny':{}}
         for g, ind in group_by_label.groups.items():
             tot = ind.size
             
             #the labels are already randomized so I don't care to do it now
             ii = int(math.ceil(tot*frac_test))
-            set_index['test'][g] = list(ind[:ii])
-            set_index['train'][g] = list(ind[ii:])
+            mode_index['test'][g] = list(ind[:ii])
+            mode_index['train'][g] = list(ind[ii:])
+            mode_index['tiny'][g] = list(ind[ii:ii+6])
         
+        self._tot = {}
+        for k,dat in mode_index.items():
+            self._tot[k] = sum(len(x) for x in dat.values())
+            
+        self._mode_index = mode_index
         
-        self.tot_train = sum(len(v) for v in set_index['train'].values())
-        self.test_train = sum(len(v) for v in set_index['test'].values())
-        self._set_index = set_index
+        #get all availabe conviations as indexes
+        self._indexes = []
+        for l_id in self._mode_index[self.mode]:
+            for ind in self._mode_index[self.mode][l_id]:
+                for is_mask in [True, False]:
+                    self._indexes.append((l_id, ind, is_mask))
         
     
     def _get_roi(self, ind, is_mask):
-        y = self.sample_data.loc[ind, 'label_id']
+        lab = self.sample_data.loc[ind, 'label_id']
+        
         if is_mask:
             img = self.masks[ind]
         else:
             img = self.full_img[ind]
             
-        if self.mode == 'train':
-            img = self._transform(img)
-        
-        return img, y
-        
+        return img, lab
     
-    
-    def __iter__(self):
+    def _to_torch(self, X, Y):
+        X = X[ None, ...].astype(np.float32)/255
+        Y = np.array([Y])
         
-        if self.mode == 'train':
-            labels_id = list(self._set_index['train'].keys())
-            for _ in range(len(self)):
-                l_id = random.choice(labels_id)
-                ind = random.choice(self._set_index['train'][l_id])
-                is_masks = random.choice([True, False])
-                yield self._get_roi(ind, is_masks)
+        X = torch.from_numpy(X).float()
+        Y = torch.from_numpy(Y).long()
         
         
-        elif self.mode == 'test':
-            for l_id in self._set_index['test']:
-                for ind in self._set_index['test'][l_id]:
-                    for is_mask in [True, False]:
-                        print(ind, is_mask)
-                        yield self._get_roi(ind, is_mask)
-        
-    def test(self):
-        self.mode = 'test'
-        
-    def train(self):
-        self.mode = 'train'
-        
-        
-    def __len__(self):
-        #I add two to include the 
-        if self.mode == 'train':
-            return self.tot_train*2
-        else:
-            return self.tot_test*2
+        return X,Y
     
     def _transform(self, img):
-        #random rotation
         for func in self.transform_funcs:
             img = func(img)
         return img
     
-    
-def batchify(gen, batch_size=32, is_torch=True):
-    def _make_batch(dat):
-        X,Y = zip(*dat)
-        Y = np.array(Y)
-        X = np.concatenate(X)
-        if is_torch:
-            X = X[:, None, ...].astype(np.float32)/255
-            X = torch.from_numpy(X)
-            Y = torch.from_numpy(Y)
-            if gen.is_gpu:
-                X = X.cpu()
-                Y = Y.cpu()
-                
-            X = Variable(X)
-            Y = Variable(Y)
-        return X, Y
-    
-    remainder = []
-    for x,y in gen:
-        remainder.append((x[None, ... ], y))
+    def __getitem__(self, idx):
+        if self.is_shuffle:
+            labels_id = list(self._mode_index[self.mode].keys())
+            l_id = random.choice(labels_id)
+            ind = random.choice(self._mode_index[self.mode][l_id])
+            is_mask = random.choice([True, False])
+            img, lab = self._get_roi(ind, is_mask)
+            img = self._transform(img)
+        else:
+            l_id, roi_ind, is_mask = self._indexes[idx]
+            img, lab = self._get_roi(roi_ind, is_mask)
         
-        if len(remainder) >= batch_size:
-            chunk = _make_batch(remainder[:batch_size])
-            remainder = remainder[batch_size:] 
-            yield chunk
-    if remainder:
-        yield _make_batch(remainder)
+        #I need to substract 1 of lab because the label_ids start with 1
+        lab -= 1
+        return self._to_torch(img, lab)
     
+    def __len__(self):
+        #I add two to include the 
+        return 2*self._tot[self.mode]
     
-    
-#%%
+    @property
+    def num_classes(self):
+        return len(self.labels)
 if __name__ == '__main__':
-    g = LabelFlows()
-    g.train()
-    for ii, (X,Y) in enumerate(batchify(g)):
-        print(X.size(), Y.size())
-        break
-        
+    roi_dataset = LabelFlow('tiny', is_shuffle=False, is_cuda=False)
+    X,Y = roi_dataset[10]
+
+    dataloader = DataLoader(roi_dataset, batch_size=32,
+                        shuffle=True, num_workers=0)
+    for i_batch, (X,Y) in enumerate(dataloader):
+        print(i_batch, X.size(),Y.size())
+    
+    #X = Variable(X)
+    #Y = Variable(Y)
+    
+#    def __iter__(self):
+#        
+#        if self.mode == 'train':
+#            labels_id = list(self._set_index[self.mode].keys())
+#            for _ in range(len(self)):
+#                l_id = random.choice(labels_id)
+#                ind = random.choice(self._set_index[self.mode][l_id])
+#                is_masks = random.choice([True, False])
+#                yield self._get_roi(ind, is_masks)
+#        
+#        
+#        else:
+#            for l_id in self._set_index[self.mode]:
+#                for ind in self._set_index[self.mode][l_id]:
+#                    for is_mask in [True, False]:
+#                        yield self._get_roi(ind, is_mask)
         
         
     
     
         
+    
+
+        
+    
+    
+#def batchify(gen, batch_size=32, is_torch=True):
+#    def _make_batch(dat):
+#        X,Y = zip(*dat)
+#        Y = np.array(Y)
+#        X = np.concatenate(X)
+#        if is_torch:
+#            X = X[:, None, ...].astype(np.float32)/255
+#            X = torch.from_numpy(X)
+#            Y = torch.from_numpy(Y)
+#            if gen.is_gpu:
+#                X = X.cpu()
+#                Y = Y.cpu()
+#                
+#            X = Variable(X)
+#            Y = Variable(Y)
+#        return X, Y
+#    
+#    remainder = []
+#    for x,y in gen:
+#        remainder.append((x[None, ... ], y))
+#        
+#        if len(remainder) >= batch_size:
+#            chunk = _make_batch(remainder[:batch_size])
+#            remainder = remainder[batch_size:] 
+#            yield chunk
+#    if remainder:
+#        yield _make_batch(remainder)
+#    
+#    
+#    
+##%%
+#if __name__ == '__main__':
+#    g = LabelFlows()
+#    g.train()
+#    for ii, (X,Y) in enumerate(batchify(g)):
+#        print(X.size(), Y.size())
+#        break
+#        
+#        
+#        
+#    
+#    
+#        
