@@ -121,7 +121,7 @@ def fit(model,
             logger.scalar_summary(tag, value, epoch)
 
     
-def main(model_name = 'Simple',
+def main(model_name,
         batch_size = 64,
         n_epochs = 1000
         ):
@@ -149,6 +149,8 @@ def main(model_name = 'Simple',
         model = STNetwork(train_dataset.num_classes)
     elif model_name == 'Simple':
         model = CNNClf(train_dataset.num_classes)
+    else:
+        raise ValueError
     
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
