@@ -169,4 +169,5 @@ def main(model_name = '',
          is_cuda)
 
 if __name__ == '__main__':
-    main()
+    import fire
+    fire.Fire(main)
