@@ -10,15 +10,25 @@ from torch import nn
 from torch.nn import functional as F
 import math
 
-class MutualLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-    
-    def forward(self, output, target):
-        x1, x2 = output
-        l1 = torch.abs(x1-x2).mean(1)
-        t = F.sigmoid(l1)
-        return F.binary_cross_entropy(t, target)
+class ContrastiveLoss(torch.nn.Module):
+    """
+    https://hackernoon.com/facial-similarity-with-siamese-networks-in-pytorch-9642aa9db2f7
+    Contrastive loss function.
+    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    """
+
+    def __init__(self, margin=2.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        label = label.float()
+        euclidean_distance = F.pairwise_distance(output1, output2)
+        loss_contrastive = torch.mean((1-label) * torch.pow(euclidean_distance, 2) +
+                                      (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
+
+
+        return loss_contrastive
     
 class CNN(nn.Module):
     def __init__(self):
@@ -57,7 +67,7 @@ class CNN(nn.Module):
         x = self.fc(x)
         return x
 
-class MutualCNN(nn.Module):
+class SiameseCNN(nn.Module):
     def __init__(self):
         super().__init__()
         self.cnn = CNN()
@@ -67,7 +77,6 @@ class MutualCNN(nn.Module):
         x1,x2 = input_var
         x1 = self.cnn(x1)
         x2 = self.cnn(x2)
-        x = self.fc(x1-x2)
-        return x
+        return x1, x2
         
         

@@ -7,9 +7,10 @@ Created on Tue Nov 21 11:42:24 2017
 """
 import tqdm
 import torch
-from torch import nn
 from flow import ROIFlowBatch
-from model import MutualCNN, MutualLoss
+from model import SiameseCNN, ContrastiveLoss
+
+from torch.nn import functional as F
 
 if __name__ == '__main__':
     mask_file = '/Users/ajaver/OneDrive - Imperial College London/aggregation/N2_1_Ch1_29062017_182108_comp3.hdf5'
@@ -17,9 +18,8 @@ if __name__ == '__main__':
     
     n_epochs = 1
     
-    model = MutualCNN()
-    #criterion = MutualLoss()
-    criterion = nn.CrossEntropyLoss()
+    model = SiameseCNN()
+    criterion = ContrastiveLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     
     gen = ROIFlowBatch(mask_file, feat_file)
@@ -27,12 +27,17 @@ if __name__ == '__main__':
     for epoch in range(n_epochs):
         pbar = tqdm.tqdm(gen)
         for input_var, target in pbar:
-            output = model.forward(input_var)
+            out1, out2 = model.forward(input_var)
             
-            loss = criterion(output, target)
+            loss = criterion(out1, out2, target)
             optimizer.zero_grad()               # clear gradients for this training step
             loss.backward()                     # backpropagation, compute gradients
             optimizer.step() 
             
-            dd = 'Epoch {} , loss={}'.format(epoch, loss.data[0])
+            pred = (F.pairwise_distance(out1, out2)> 1).long().squeeze()
+            
+            acc = (pred == target).float().mean()
+            fones = (target.float().mean().data[0], pred.float().mean().data[0])
+            
+            dd = 'Epoch {} , loss={}, acc={}, frac_ones={:.2},{:.2}'.format(epoch, loss.data[0], acc.data[0], *fones)
             pbar.set_description(desc=dd, refresh=False)
