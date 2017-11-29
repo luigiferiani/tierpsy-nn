@@ -9,5 +9,6 @@ tensorboard --logdir=$WORK/classify_strains/results/model_w_embeddings --port=70
 
 scp /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/train_data/CeNDR/CeNDR_skel_smoothed.hdf5 ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/train_set_new/
 
-rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/ /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/logs
+rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/classify_strains/results/snippets_autoencoder /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/classify_strains/logs
 
+rsync -vr ajaver@login.cx1.hpc.imperial.ac.uk:/work/ajaver/recognize_worms/results/ /Users/ajaver/OneDrive\ -\ Imperial\ College\ London/recognize_worms/logs

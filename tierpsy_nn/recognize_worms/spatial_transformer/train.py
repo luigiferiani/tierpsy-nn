@@ -121,7 +121,7 @@ def fit(model,
             logger.scalar_summary(tag, value, epoch)
 
     
-def main(model_name = '',
+def main(model_name = 'STN',
         batch_size = 64,
         n_epochs = 1000
         ):
