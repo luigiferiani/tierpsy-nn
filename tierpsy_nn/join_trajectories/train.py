@@ -5,6 +5,7 @@ Created on Tue Nov 21 11:42:24 2017
 
 @author: ajaver
 """
+import os
 import tqdm
 import torch
 from flow import ROIFlowBatch
@@ -13,8 +14,11 @@ from model import SiameseCNN, ContrastiveLoss
 from torch.nn import functional as F
 
 if __name__ == '__main__':
-    mask_file = '/Users/ajaver/OneDrive - Imperial College London/aggregation/N2_1_Ch1_29062017_182108_comp3.hdf5'
-    feat_file = mask_file.replace('.hdf5', '_featuresN.hdf5')
+    #mask_file = '/Users/ajaver/OneDrive - Imperial College London/aggregation/N2_1_Ch1_29062017_182108_comp3.hdf5'
+    data_dir = '/Users/ajaver/OneDrive - Imperial College London/classify_strains/train_data/videos'
+    fname = 'BRC20067_worms10_food1-10_Set10_Pos5_Ch6_16052017_165021.hdf5'
+    mask_file = os.path.join(data_dir,fname)
+    feat_file = os.path.join(data_dir,fname.replace('.hdf5', '_featuresN.hdf5'))
     
     n_epochs = 1
     
