@@ -1,2 +1,4 @@
 
 *.pyc
+
+tierpsy_nn/egg_laying/densenet/__pycache__/
