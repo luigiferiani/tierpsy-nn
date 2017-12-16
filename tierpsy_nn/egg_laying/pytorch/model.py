@@ -165,14 +165,54 @@ class FullLoss(nn.Module):
         
         loss = d1 + d2
         return loss
+#%%
+class STNetwork(nn.Module):
+    def __init__(self, num_output):
+        super().__init__(num_output)
+        self.cnn_loc = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=7),
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(8, 10, kernel_size=5),
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(10, 10, kernel_size=5),
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU()
+        )
         
+        # Regressor for the 3 * 2 affine matrix
+        self.fc_loc = nn.Sequential(
+            nn.Linear(10*16*16, 32),
+            nn.Dropout(0.2),
+            nn.ReLU(),
+            nn.Linear(32, 3 * 2)
+        )
+        
+        for m in self.modules():
+            if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+       
+    # Spatial transformer network forward function
+    def forward(self, x):
+        xs = self.cnn_loc(x)
+        xs = xs.view(-1, 10*16*16)
+        theta = self.fc_loc(xs)
+        theta = theta.view(-1, 2, 3)
+        
+        grid = F.affine_grid(theta, x.size())
+        xo = F.grid_sample(x, grid)
+        
+        return xo
+
     
 #%%
 if __name__ == '__main__':
     import tqdm
     from flow import EggLayingFlow
     
-    is_cuda = True
+    is_cuda = False
     snippet_size = 5
     n_batch = 64
     embedding_size = 256
@@ -210,6 +250,7 @@ if __name__ == '__main__':
             
             ss = 'epoch {} : loss {}, pred1 {:.2f}'.format(ii, loss.data[0], pred1.data[0])
             gen.pbar.set_description(ss, refresh=False)
+            break
         
     
     
