@@ -17,27 +17,49 @@ import tqdm
 import torch
 
 egg_events_file_dflt = 'egg_events.csv'
+local_dir_dlft = '/data/ajaver/egg_laying/training_set'
 
 def _get_random_factors(
         zoom_r = (1, 1.5),
         x_offset_r = (-5, 5),
         y_offset_r = (-5, 5),
-        rotation_r = (-np.pi, np.pi)
+        rotation_r = (-np.pi, np.pi),
+        b_shift_r = (0., 1.)
         ):
     factors = dict(
             x_offset = random.uniform(*x_offset_r),
             y_offset = random.uniform(*y_offset_r),
-            zoom_f = 1.,#random.uniform(*zoom_r),
+            zoom_f = random.uniform(*zoom_r),
             rotation_f =  random.uniform(*rotation_r),
             v_shift = random.choice([False, True]),
             h_shift = random.choice([False, True]),
-            b_shift = 0.,#random.random()
+            b_shift = random.uniform(*b_shift_r),
             )
     return factors
     
-def _crop_and_augment(snippet, cxx, cyy, w_roi_size, roi_output_size, is_augment=False):
+
+def _shift_bgnd(imgs):
+    if imgs.size == 0:
+        return imgs
+    mask = imgs>0
+    valid_pix = imgs[mask]
+    imgs[~mask] = np.percentile(valid_pix, 95)
+        
+    return imgs
+
+def _crop_and_augment(snippet, cxx, cyy, 
+                      w_roi_size, 
+                      roi_output_size, 
+                      is_nozoom = True,
+                      is_augment=False,
+                      is_bgnd_rm = False):
     
-    r = _get_random_factors()
+    if is_nozoom:
+        r = _get_random_factors(zoom_r = (1.,1.), b_shift_r = (0., 0.,))
+    elif is_bgnd_rm:
+        r = _get_random_factors(b_shift_r = (0., 0.,))
+    else:
+        r = _get_random_factors()
     
     y_size = snippet.shape[1]
     x_size = snippet.shape[2]
@@ -119,7 +141,10 @@ class EggLayingFlow():
                 is_augment = False,
                 is_cuda = False,
                 is_autoencoder = False,
-                local_dir = '/data/ajaver/egg_laying/training_set'
+                is_nozoom = True,
+                is_bgnd_rm = False,
+                select_near_event = False,
+                local_dir = local_dir_dlft
                 ):
         
         self.egg_events_file = egg_events_file
@@ -128,9 +153,12 @@ class EggLayingFlow():
         self.roi_output_s = roi_output_s
         self.n_batch = n_batch
         self.is_cuda = is_cuda
+        self.is_nozoom = is_nozoom
+        self.is_bgnd_rm = is_bgnd_rm
         self.is_autoencoder = is_autoencoder
         self.is_augment = is_augment
         self.local_dir = local_dir
+        self.select_near_event = select_near_event
         
         egg_events = pd.read_csv(egg_events_file)
         egg_events = egg_events[egg_events['set_type'] == set_type]
@@ -201,6 +229,26 @@ class EggLayingFlow():
                     neg_index.append(ind)
             
             
+            if self.select_near_event:
+                # I do not want indexes in the current index
+                bad_ind = sum([list(range(pp-1, pp+2)) for pp in pos_index], []) 
+                
+                for pp in pos_index:
+                    p1 = pp - 10
+                    p2 = pp + 10
+                    
+                    ind = random.randint(p1, p2)
+                    
+                    test_n = 0
+                    while ind in bad_ind:
+                        # this condtions could create an infinite loop if not checked
+                        ind = random.randint(p1, p2)
+                        test_n += 1
+                        if test_n > 10:
+                            break
+                    neg_index.append(ind)
+            
+            
             labels = len(pos_index)*[1] + len(neg_index)*[0]
             indexes = pos_index + neg_index
             
@@ -213,6 +261,7 @@ class EggLayingFlow():
                     i2 = c_frame + snippet_half + 1
                     snippet = masks[i1:i2, :, :]
                     
+                    snippet = _shift_bgnd(snippet)
                     snippet = snippet.astype(np.float32)/255 - 0.5
                     
                     c_rows = trajectories_data[i1:i2]
@@ -230,6 +279,8 @@ class EggLayingFlow():
                                                 yy, 
                                                 roi_size, 
                                                 self.roi_output_s, 
+                                                is_nozoom = self.is_nozoom,
+                                                is_bgnd_rm = self.is_bgnd_rm,
                                                 is_augment = self.is_augment)
                     outputs.append((snippet, lab))
                     if len(outputs) >= self.n_batch:

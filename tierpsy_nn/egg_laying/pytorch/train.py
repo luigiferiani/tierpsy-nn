@@ -13,7 +13,7 @@ import os
 import time
 
 from flow import EggLayingFlow
-from model import EggL_AE, FullLoss #EggLConv3D
+from model import EggL_AE, FullLoss, EggL_STN_oflow, EggL_STN, EggL_Diff, EggL_ChT, EggL_Diff_T2
 import train_helper as th
 
 def _get_log_dir(model_name, details=''):
@@ -120,19 +120,66 @@ def main(model_name = 'EggSnippet',
          snippet_size = 5,
         roi_output_s = 96,
         n_batch = 64,
-        n_epochs = 1000
+        n_epochs = 1000,
+        decode_loss_mix = 10.,
+        class_loss_mix = 1.,
+        is_nozoom = True,
+        restart_path = '',
+        select_near_event = True
         ):
     is_cuda = torch.cuda.is_available()
+    
+    is_bgnd_rm = False
+    is_autoencoder = False
+    criterion = nn.BCELoss()
     
     if model_name == 'EggSnippet':
         model = EggL_AE(embedding_size = 256, 
                         snippet_size = snippet_size
                         )
+        criterion = FullLoss(decode_loss_mix = decode_loss_mix, 
+                             class_loss_mix = class_loss_mix)
         is_autoencoder = True
+        
+        
+        model_name += '_Dmix{}_Cmix{}'.format(decode_loss_mix, class_loss_mix)
+    
+    elif model_name == 'EggL_STN':
+        model = EggL_STN(embedding_size = 256, 
+                        snippet_size = snippet_size
+                        )
+    elif model_name == 'EggL_STN_oflow':
+        model = EggL_STN_oflow(embedding_size = 256, 
+                        snippet_size = snippet_size
+                        )
+    elif model_name == 'EggL_Diff':
+        model = EggL_Diff(embedding_size = 256, 
+                        snippet_size = snippet_size
+                        )
+        is_bgnd_rm = True
+    elif model_name == 'EggL_ChT':
+        model = EggL_ChT(embedding_size = 256, 
+                        snippet_size = snippet_size
+                        )
+    elif model_name == 'EggL_Diff_T2':
+        model = EggL_Diff_T2(embedding_size = 256, 
+                        snippet_size = snippet_size
+                        )
+        is_bgnd_rm = True
     else:
         raise ValueError
     
-    model_name += '_nozoom'
+    if os.path.exists(restart_path):
+        print('loading pretrained weigths...')
+        checkpoint = torch.load(restart_path, map_location=lambda storage, loc: storage)
+        model.load_state_dict(checkpoint['state_dict'])
+    
+    if is_nozoom:
+        model_name += '_nozoom'
+    
+    if select_near_event:
+        model_name += '_S'
+    
     
     log_dir = _get_log_dir(model_name)
     
@@ -141,19 +188,27 @@ def main(model_name = 'EggSnippet',
                                 roi_output_s = roi_output_s,
                                 n_batch = n_batch,
                                 is_augment = True,
+                                is_nozoom = is_nozoom,
+                                is_bgnd_rm = is_bgnd_rm,
                                 is_cuda = is_cuda,
-                                is_autoencoder = is_autoencoder)
+                                is_autoencoder = is_autoencoder,
+                                select_near_event = select_near_event
+                                )
+    
     test_flow = EggLayingFlow(set_type = 'test',
                                 snippet_size = snippet_size,
                                 roi_output_s = roi_output_s,
                                 n_batch = n_batch,
                                 is_augment = False,
+                                is_bgnd_rm = is_bgnd_rm,
                                 is_cuda = is_cuda,
-                                is_autoencoder = is_autoencoder)
+                                is_autoencoder = is_autoencoder,
+                                select_near_event = True
+                                )
     
     
     
-    criterion = FullLoss(decode_loss_mix = 10., class_loss_mix = 1.)
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     if is_cuda:
         print('This is CUDA!!!!')
