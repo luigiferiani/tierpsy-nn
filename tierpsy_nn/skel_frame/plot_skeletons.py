@@ -10,15 +10,6 @@ import pandas as pd
 import tables
 import matplotlib.pylab as plt
 
-def circle(ax, x, y, radius=0.15):
-    #https://matplotlib.org/devdocs/gallery/showcase/anatomy.html#sphx-glr-gallery-showcase-anatomy-py
-    from matplotlib.patches import Circle
-    from matplotlib.patheffects import withStroke
-    circle = Circle((x, y), radius, clip_on=False, zorder=10, linewidth=1,
-                    edgecolor='green', facecolor=(0, 0, 0, .0125),
-                    path_effects=[withStroke(linewidth=1, foreground='green')])
-    ax.add_artist(circle)
-
 examples_file = '/Volumes/behavgenom_archive$/Avelino/screening/CeNDR/skel_examples_r.hdf5'
 
 with pd.HDFStore(examples_file, 'r') as fid:
