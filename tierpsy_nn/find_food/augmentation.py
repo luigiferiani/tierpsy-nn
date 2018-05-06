@@ -9,7 +9,6 @@ import numpy as np
 import random
 from scipy.ndimage.interpolation import map_coordinates, affine_transform
 from scipy.ndimage.filters import gaussian_filter
-from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, disk, skeletonize, binary_erosion
 from skimage.io import imread
 from skimage.transform import resize
@@ -358,7 +357,7 @@ class DirectoryImgGenerator(object):
             Yo = resize(Yo, self.im_size, mode='reflect')>0
         
         if self.only_contours:
-            Yc = Yo - binary_erosion(Yo)
+            Yc = Yo ^ binary_erosion(Yo) #xor operator
             Yo = dilation(Yc, disk(1))
         
         Y = to_categorical(Yo, 2)
@@ -378,7 +377,7 @@ class DirectoryImgGenerator(object):
         def _increase_border_weight(_Y):
             sigma = self.weight_params['sigma']
             weigth = self.weight_params['weigth']
-            Yc = _Y - binary_erosion(_Y)
+            Yc = _Y ^ binary_erosion(_Y) #xor operator
             #increase the weights in the border
             W_border = gaussian_filter(Yc.astype(K.floatx()), sigma=2.5)
             W_border *= (sigma**2)*weigth #normalize weights
@@ -460,7 +459,7 @@ if __name__ == '__main__':
     n_tiles=8
     
     only_contours = True
-    main_dir = '/Users/ajaver/OneDrive - Imperial College London/food/train_set'
+    main_dir = os.path.join(os.environ['HOME'], 'OneDrive - Imperial College London/training_data/food/train_set')
     
     
     transform_ags = dict(
@@ -481,7 +480,7 @@ if __name__ == '__main__':
     
     
     
-    input_size, output_size, pad_size, tile_corners = get_sizes(im_size, n_tiles=n_tiles)
+    #input_size, output_size, pad_size, tile_corners = get_sizes(im_size, n_tiles=n_tiles)
     
     
     
@@ -502,7 +501,7 @@ if __name__ == '__main__':
     assert gen.output_size == output_size
     #%%
     for ii in range(1):
-        X,Y = gen_d.get_random()
+        X, Y = gen_d.get_random()
         
         plt.figure()
         plt.subplot(1,3,1)
@@ -518,7 +517,7 @@ if __name__ == '__main__':
         if nn > 10:
             break
     
-        for ii, (X,Y) in enumerate(zip(batch_x, batch_y)):
+        for ii, (X, Y) in enumerate(zip(batch_x, batch_y)):
             #%%
             xx = np.squeeze(X)
             bot = np.min(xx)

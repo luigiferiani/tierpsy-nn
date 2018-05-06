@@ -17,11 +17,15 @@ from keras.optimizers import RMSprop
 from augmentation import get_sizes, ImageMaskGenerator, DirectoryImgGenerator
 from unet_build import get_unet_model
 
-main_dir = '/work/ajaver/food/train_set'
-SAVE_DIR = '/work/ajaver/food/results'
+#main_dir = '/work/ajaver/food/train_set'
+#SAVE_DIR = '/work/ajaver/food/results'
 
 #main_dir = '/Users/ajaver/OneDrive - Imperial College London/food/train_set'
 #SAVE_DIR = '/Users/ajaver/OneDrive - Imperial College London/food/results'
+
+main_dir = '/well/rittscher/users/avelino/WormData/experiments/food/train_set/'
+SAVE_DIR = '/well/rittscher/users/avelino/WormData/experiments/food/results/'
+
 
 def main(
     epochs = 20000,
