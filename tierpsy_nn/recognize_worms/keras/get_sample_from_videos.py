@@ -10,7 +10,8 @@ import tables
 import numpy as np
 import os
 import glob
-
+from pathlib import Path
+from tqdm import tqdm
 # from MWTracker.trackWorms.getSkeletonsTables import getWormROI
 from tierpsy.analysis.ske_create.helperIterROI import getWormROI
 #%%
@@ -160,9 +161,13 @@ if __name__ == '__main__':
     all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples.hdf5'
     # all_samples_file = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samples.hdf5'
     # root_dir = '/Volumes/behavgenom_archive$/Avelino/Worm_Rig_Tests/'
-    root_dir = '/Users/lferiani/Desktop/20200107_test'
+    # root_dir = '/Users/lferiani/Desktop/20200107_test'
+    root_dir = '/Volumes/Seagate Bac/SyngentaScreen'
+    is_save_skeletons = True
     #%%
-    masked_files = glob.glob(os.path.join(root_dir, '**', 'MaskedVideos', '**','*.hdf5'), recursive=True)
+    # masked_files = glob.glob(os.path.join(root_dir, '**', 'MaskedVideos', '**','*.hdf5'), recursive=True)
+    masked_files = list((Path(root_dir) / 'MaskedVideos/20191205/').rglob('*prestim*/*.hdf5'))
+    print(len(masked_files))
     #%%
     #delete previous data
     dat = [(ii, np.string_(x)) for ii,x in enumerate(masked_files)]
@@ -173,20 +178,18 @@ if __name__ == '__main__':
                         obj = files_rec)
     #%%
     tot_files = len(masked_files)
-    for file_id, masked_file_b in files_rec:
+    for file_id, masked_file_b in tqdm(files_rec):
         masked_file = masked_file_b.decode('utf-8')
         base_name = os.path.splitext(os.path.basename(masked_file))[0]
-        print('{} of {} {}'.format(file_id+1, tot_files, base_name))
+        # print('{} of {} {}'.format(file_id+1, tot_files, base_name))
 
         skeletons_file = masked_file.replace('MaskedVideos', 'Results').replace('.hdf5', '_skeletons.hdf5')
         try:
             with tables.File(skeletons_file, 'r') as fid:
-                fid.get_node('/skeleton');
+                fid.get_node('/skeleton')
         except:
             print("couldn't get skeletons")
             continue
-
-
 
         roi_size = 160
         use_full_frames = True
@@ -198,15 +201,19 @@ if __name__ == '__main__':
                                                         sample_data,
                                                         roi_size,
                                                         use_full_frames)
-        sample_skeletons, sample_cnt1, sample_cnt2 = read_sample_skeletons(skeletons_file, sample_data)
+        if is_save_skeletons:
+            sample_skeletons, sample_cnt1, sample_cnt2 = read_sample_skeletons(
+                skeletons_file, sample_data)
 
         #%%
         dat2save = {'sample_data': sample_data.to_records(index=False),
-                    'mask': sample_masks,
-                    'full_data': sample_fulls,
-                    'skeleton': sample_skeletons,
-                    'contour_side1': sample_cnt1,
-                    'contour_side2': sample_cnt2}
+                    'mask': sample_masks}
+        if use_full_frames:
+            dat2save['full_data'] = sample_fulls
+        if is_save_skeletons:
+            dat2save['skeleton'] = sample_skeletons
+            dat2save['contour_side1'] = sample_cnt1
+            dat2save['contour_side2'] = sample_cnt2
 
         with tables.File(all_samples_file, 'r+') as fid:
             if not '/sample_data' in fid:

@@ -19,4 +19,6 @@ To make sure that this repo does not break the installation of tierpsy used for 
     pip install -e .
     cd ..
     cd tierpsy-nn
-    pip install -e .
+
+
+Now the scripts in tierpsy-nn will be able to call upon functions from tierpsy.

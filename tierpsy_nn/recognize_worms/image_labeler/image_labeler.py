@@ -92,9 +92,9 @@ class image_labeler_GUI(TrackerViewerAuxGUI):
         if next_f != next_f:
             next_f = self.sample_data.shape[0]
 
-        print("setting sample number to {}".format(next_f))
+        # print("setting sample number to {}".format(next_f))
         self.ui.spinBox_samp_ord.setValue(next_f)
-        print(self.ui.spinBox_samp_ord.value())
+        # print(self.ui.spinBox_samp_ord.value())
         self.updateSampleNumber()
     #def updateImGroup(self):
     #    super().updateImGroup()
@@ -129,20 +129,20 @@ class image_labeler_GUI(TrackerViewerAuxGUI):
 
 
     def updateSampleNumber(self):
-        print('updating sample number')
+        # print('updating sample number')
         self.sample_number = self.ui.spinBox_samp_ord.value()
         self.frame_number = int(self.sample_data.loc[self.sample_number, 'img_row_id'])
 
         self.updateImage()
         label_id = int(self.sample_data.loc[self.sample_number, 'label_id'])
-        print('label_id:{}'.format(label_id))
+        # print('label_id:{}'.format(label_id))
         if label_id >0:
             self.buttons[label_id].setChecked(True)
         else:
             for btn in self.buttons.values():
-                print('resetting {} which was {}'.format(btn, btn.isChecked()))
+                # print('resetting {} which was {}'.format(btn, btn.isChecked()))
                 btn.setChecked(False)
-                print("now it's {}".format(btn.isChecked()))
+                # print("now it's {}".format(btn.isChecked()))
                 btn.repaint()
 
 
