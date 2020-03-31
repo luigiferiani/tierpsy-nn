@@ -13,8 +13,9 @@ import pandas as pd
 
 
 if __name__ == '__main__':
-    all_samples_file = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samplesI.hdf5'
-
+    # all_samples_file = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samplesI.hdf5'
+    all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples.hdf5'
+    output_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/sample.hdf5'
 
     with pd.HDFStore(all_samples_file) as fid:
         sample_data = fid['/sample_data']
@@ -26,10 +27,10 @@ if __name__ == '__main__':
 
     with tables.File(all_samples_file, 'r') as fid:
         d = (40, 120)
-        
+
         masks = fid.get_node('/', 'mask')[valid_data.index, d[0]:d[1], d[0]:d[1]]
         full_data = fid.get_node('/', 'full_data')[valid_data.index, d[0]:d[1], d[0]:d[1]]
-        
+
     #%%
     tot_samples = full_data.shape[0]
 
@@ -38,38 +39,38 @@ if __name__ == '__main__':
     test_size = 1000
     val_size = 1000
 
-    all_ind = {'test' : all_ind[:test_size], 
+    all_ind = {'test' : all_ind[:test_size],
                'val': all_ind[test_size:(val_size+test_size)],
                'train' : all_ind[(val_size+test_size):]}
-       
+
     #%%
-    table_filters = tables.Filters(complevel=5, 
-                                   complib='zlib', 
-                                   shuffle=True, 
+    table_filters = tables.Filters(complevel=5,
+                                   complib='zlib',
+                                   shuffle=True,
                                    fletcher32=True)
 
-    with tables.File('sample.hdf5', 'w') as fid:
-        fid.create_table('/', 
-                         'sample_data', 
-                         obj=valid_data.to_records(), 
+    with tables.File(output_samples_file, 'w') as fid:
+        fid.create_table('/',
+                         'sample_data',
+                         obj=valid_data.to_records(),
                          filters=table_filters)
-        
+
         for field, ind in all_ind.items():
             fid.create_earray('/',
-                     field + '_y', 
+                     field + '_y',
                      obj = label_id[ind],
                      filters=table_filters)
-            
+
             fid.create_earray('/',
-                     field + '_x', 
+                     field + '_x',
                      obj = masks[ind],
                      filters=table_filters)
-            
+
             fid.create_earray('/',
-                     field + '_full_x', 
+                     field + '_full_x',
                      obj = full_data[ind],
                      filters=table_filters)
-            
+
 
     #%%
 
@@ -92,15 +93,15 @@ if __name__ == '__main__':
     #
     ##%%
     #import tables
-    #field_names = ['train_x', 'train_y', 
+    #field_names = ['train_x', 'train_y',
     #             'val_x', 'val_y',
     #             'test_x', 'test_y']
     #sample_data_l = sum(map(list, sample_data), [])
     #table_filters = tables.Filters(complevel=5, complib='zlib', shuffle=True, fletcher32=True)
-    #    
+    #
     #with tables.File('sample.hdf5', 'w') as fid:
     #    for field, dat in zip(field_names, sample_data_l):
     #        fid.create_earray('/',
-    #                 field, 
+    #                 field,
     #                 obj = dat,
     #                 filters=table_filters)
