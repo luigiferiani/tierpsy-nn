@@ -158,15 +158,17 @@ def read_sample_skeletons(skeletons_file, sample_traj_data):
 #%%
 if __name__ == '__main__':
 
-    all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples.hdf5'
+    # all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples.hdf5'
+    all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples_20191101.hdf5'
     # all_samples_file = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samples.hdf5'
     # root_dir = '/Volumes/behavgenom_archive$/Avelino/Worm_Rig_Tests/'
     # root_dir = '/Users/lferiani/Desktop/20200107_test'
-    root_dir = '/Volumes/Seagate Bac/SyngentaScreen'
+    # root_dir = '/Volumes/Seagate Bac/SyngentaScreen'
+    root_dir = '/Volumes/behavgenom$/Ida/Data/Hydra/PilotDrugExps'
     is_save_skeletons = True
     #%%
     # masked_files = glob.glob(os.path.join(root_dir, '**', 'MaskedVideos', '**','*.hdf5'), recursive=True)
-    masked_files = list((Path(root_dir) / 'MaskedVideos/20191205/').rglob('*prestim*/*.hdf5'))
+    masked_files = list((Path(root_dir) / 'MaskedVideos/20191101/').rglob('*.hdf5'))
     print(len(masked_files))
     #%%
     #delete previous data

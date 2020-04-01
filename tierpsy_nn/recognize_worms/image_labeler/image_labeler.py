@@ -17,8 +17,8 @@ from tierpsy.gui.HDF5VideoPlayer import LineEditDragDrop, setChildrenFocusPolicy
 
 #FILE_NAME = '/Users/ajaver/OneDrive - Imperial College London/recognize_worms/worm_ROI_samplesI.hdf5'
 # FILE_NAME = '/Volumes/rescomp1/data/WormData/experiments/training_rois.hdf5'
-# FILE_NAME = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples.hdf5'
-FILE_NAME = ''
+FILE_NAME = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples_20191205.hdf5'
+# FILE_NAME = ''
 
 class d_Ui_image_labeler(Ui_image_labeler):
     def __init__(self):
