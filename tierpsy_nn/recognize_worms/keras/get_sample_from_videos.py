@@ -165,11 +165,17 @@ if __name__ == '__main__':
     # root_dir = '/Users/lferiani/Desktop/20200107_test'
     # root_dir = '/Volumes/Seagate Bac/SyngentaScreen'
     # root_dir = '/Volumes/behavgenom$/Ida/Data/Hydra/PilotDrugExps'
-    root_dir = '/Volumes/behavgenom$/Ida/Data/Hydra/N2unc25'
+    # root_dir = '/Volumes/behavgenom$/Ida/Data/Hydra/N2unc25'
     is_save_skeletons = True
     #%%
     # masked_files = glob.glob(os.path.join(root_dir, '**', 'MaskedVideos', '**','*.hdf5'), recursive=True)
-    masked_files = list((Path(root_dir) / 'MaskedVideos/').rglob('*run1*/*.hdf5'))
+    # masked_files = list((Path(root_dir) / 'MaskedVideos/').rglob('*run1*/*.hdf5'))
+    masked_files = list(Path(
+        '/Volumes/behavgenom$/Ida/Data/Hydra/N2unc25/MaskedVideos/').rglob(
+            '*113921*/*.hdf5'))
+    masked_files = masked_files + list(Path(
+        '/Volumes/behavgenom$/Ida/Data/Hydra/SyngentaScreen/MaskedVideos/20191205').rglob(
+            '*prestim*.*.hdf5'))
     print(len(masked_files))
     #%%
     #delete previous data
