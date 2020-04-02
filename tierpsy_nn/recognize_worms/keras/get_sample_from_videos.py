@@ -169,7 +169,7 @@ if __name__ == '__main__':
     is_save_skeletons = True
     #%%
     # masked_files = glob.glob(os.path.join(root_dir, '**', 'MaskedVideos', '**','*.hdf5'), recursive=True)
-    masked_files = list((Path(root_dir) / 'MaskedVideos/n2unc25_run1_20190816_103906.22956809/').rglob('*.hdf5'))
+    masked_files = list((Path(root_dir) / 'MaskedVideos/').rglob('*run1*/*.hdf5'))
     print(len(masked_files))
     #%%
     #delete previous data
