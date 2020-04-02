@@ -159,7 +159,7 @@ def read_sample_skeletons(skeletons_file, sample_traj_data):
 if __name__ == '__main__':
 
     # all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples.hdf5'
-    all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples_N2unc25_onevid.hdf5'
+    all_samples_file = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples_N2unc25_run1.hdf5'
     # all_samples_file = '/Users/ajaver/OneDrive - Imperial College London/training_data/worm_ROI_samples.hdf5'
     # root_dir = '/Volumes/behavgenom_archive$/Avelino/Worm_Rig_Tests/'
     # root_dir = '/Users/lferiani/Desktop/20200107_test'
