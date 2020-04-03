@@ -175,7 +175,7 @@ if __name__ == '__main__':
             '*113921*/*.hdf5'))
     masked_files = masked_files + list(Path(
         '/Volumes/behavgenom$/Ida/Data/Hydra/SyngentaScreen/MaskedVideos/20191205').rglob(
-            '*prestim*.*.hdf5'))
+            '*prestim*/*.hdf5'))
     print(len(masked_files))
     #%%
     #delete previous data
