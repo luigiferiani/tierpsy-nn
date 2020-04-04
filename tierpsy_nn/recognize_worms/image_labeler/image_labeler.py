@@ -72,9 +72,10 @@ class image_labeler_GUI(TrackerViewerAuxGUI):
             self.sample_data = fid['/sample_data']
 
         if not 'resampled_index' in self.sample_data:
+            print('resampling')
             self.sample_data['resampled_index'] = np.random.permutation(len(self.sample_data))
             # self.sample_data['resampled_index'] = np.arange(len(self.sample_data))
-        self.sample_data['img_row_id'] = self.sample_data.index
+        # self.sample_data['img_row_id'] = self.sample_data.index
         self.sample_data.index = self.sample_data['resampled_index'].values
 
         if not 'label_id' in self.sample_data:

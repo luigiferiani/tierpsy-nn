@@ -171,10 +171,13 @@ if __name__ == '__main__':
     # masked_files = glob.glob(os.path.join(root_dir, '**', 'MaskedVideos', '**','*.hdf5'), recursive=True)
     # masked_files = list((Path(root_dir) / 'MaskedVideos/').rglob('*run1*/*.hdf5'))
     masked_files = list(Path(
-        '/Volumes/behavgenom$/Ida/Data/Hydra/N2unc25/MaskedVideos/').rglob(
+        '/Volumes/Seagate Bac/N2unc25/MaskedVideos/').rglob(
             '*113921*/*.hdf5'))
+    # masked_files = masked_files + list(Path(
+    #     '/Volumes/behavgenom$/Ida/Data/Hydra/SyngentaScreen/MaskedVideos/20191205').rglob(
+    #         '*prestim*/*.hdf5'))
     masked_files = masked_files + list(Path(
-        '/Volumes/behavgenom$/Ida/Data/Hydra/SyngentaScreen/MaskedVideos/20191205').rglob(
+        '/Volumes/Seagate Bac/SyngentaScreen/MaskedVideos/20191205').rglob(
             '*prestim*/*.hdf5'))
     print(len(masked_files))
     #%%
