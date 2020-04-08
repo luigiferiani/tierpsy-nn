@@ -4,9 +4,10 @@ import tables
 import pandas as pd
 import numpy as np
 from functools import partial
+import cv2
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QPixmap, QImage, QPainter, QPen, QColor
+from PyQt5.QtGui import QPixmap, QImage, QPainter, QPen, QColor, qRgb
 from PyQt5.QtCore import Qt
 
 from image_labeler_ui import Ui_image_labeler
@@ -17,7 +18,7 @@ from tierpsy.gui.HDF5VideoPlayer import LineEditDragDrop, setChildrenFocusPolicy
 
 #FILE_NAME = '/Users/ajaver/OneDrive - Imperial College London/recognize_worms/worm_ROI_samplesI.hdf5'
 # FILE_NAME = '/Volumes/rescomp1/data/WormData/experiments/training_rois.hdf5'
-# FILE_NAME = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples_20191205.hdf5'
+FILE_NAME = '/Users/lferiani/work_repos/tierpsy-nn/data/worm_ROI_samples_20191205.hdf5'
 FILE_NAME = ''
 
 class d_Ui_image_labeler(Ui_image_labeler):
@@ -150,7 +151,30 @@ class image_labeler_GUI(TrackerViewerAuxGUI):
     def updateImage(self):
         self.readCurrentFrame()
         # self.drawSkelSingleWorm()
+        self.drawGuides()
         self.mainImage.setPixmap(self.frame_qimg)
+
+    def readCurrentFrame(self):
+
+        if self.image_group is None:
+            self.frame_qimg = None
+            return
+        self.frame_img = self.image_group[self.frame_number, :, :]
+
+        self._normalizeImage()
+
+    def drawGuides(self):
+
+        h, w = self.frame_img.shape
+        painter = QPainter()
+        painter.begin(self.frame_qimg)
+        pen = QPen()
+        pen.setWidth(2)
+        pen.setColor(QColor(250, 140, 0))
+        painter.setPen(pen)
+        painter.drawRect(int(w/4), int(h/4), int(w/2), int(h/2))
+        painter.drawPoint(int(w/2), int(h/2))
+
 
     def saveData(self, is_gui_to_close=False):
         '''save data from manual labelling. pytables saving format is more convenient than pandas'''
