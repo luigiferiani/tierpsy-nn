@@ -218,6 +218,9 @@ if __name__ == '__main__':
                 skeletons_file, sample_data)
 
         #%%
+        sample_data['img_row_id_old'] = sample_data['img_row_id']
+        # this was done in the labeller but causes untold problems:
+        sample_data['img_row_id'] = sample_data.index
         dat2save = {'sample_data': sample_data.to_records(index=False),
                     'mask': sample_masks}
         if use_full_frames:
